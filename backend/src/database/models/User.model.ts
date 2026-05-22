@@ -1,1 +1,44 @@
-// Placeholder
+import mongoose, { Schema, Document, Model } from 'mongoose';
+import { Role } from '../../shared/types';
+
+export interface IUserDocument extends Document {
+  email: string;
+  passwordHash: string;
+  fullName: string;
+  employeeNumber: string;
+  position: string;
+  schoolId: mongoose.Types.ObjectId;
+  role: Role;
+  deviceIds: string[];
+  refreshTokens: string[];
+  isActive: boolean;
+}
+
+const userSchema = new Schema<IUserDocument>(
+  {
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    passwordHash: { type: String, required: true },
+    fullName: { type: String, required: true, trim: true },
+    employeeNumber: { type: String, trim: true, default: '' },
+    position: { type: String, trim: true, default: '' },
+    schoolId: { type: Schema.Types.ObjectId, ref: 'School', required: true },
+    role: { type: String, enum: Object.values(Role), required: true },
+    deviceIds: [{ type: String }],
+    refreshTokens: [{ type: String }],
+    isActive: { type: Boolean, default: true },
+  },
+  { timestamps: true },
+);
+
+userSchema.index({ email: 1 });
+userSchema.index({ schoolId: 1 });
+
+userSchema.set('toJSON', {
+  transform: (_doc, ret) => {
+    delete ret.passwordHash;
+    delete ret.refreshTokens;
+    return ret;
+  },
+});
+
+export const User: Model<IUserDocument> = mongoose.model<IUserDocument>('User', userSchema);

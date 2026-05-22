@@ -1,0 +1,5 @@
+{
+  "name": "aralsync",
+  "private": true,
+  "workspaces": ["frontend", "backend"]
+}
