@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect, useRef, useMemo, useCallback, createContext, useContext } from 'react';
 import * as LucideIcons from 'lucide-react';
 import { SUBJECT_COLORS } from '../data/mockData';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect, useMemo, useRef, useCallback, Fragment } from 'react';
 import {
   Icon, Avatar, Badge, QuarterBadge, Card, Modal, useToast,

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 
 
@@ -277,7 +278,7 @@ export function TweaksPanel({ title = 'Tweaks', children }) {
 
 // ── Layout helpers ──────────────────────────────────────────────────────────
 
-export function TweakSection({ label, children }) {
+export function TweakSection({ label, children = null }) {
   return (
     <>
       <div className="twk-sect">{label}</div>

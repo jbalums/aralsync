@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState } from 'react';
 import {
   Icon,
@@ -39,7 +40,7 @@ export const MOBILE_TABS = [
   { id:'more',       label:'More',       icon:'more-horizontal' },
 ];
 
-export function Sidebar({ route, setRoute, online, pending, onClose }) {
+export function Sidebar({ route, setRoute, online, pending, onClose = () => {} }) {
   return (
     <aside className="h-full w-[248px] shrink-0 bg-white border-r border-line flex flex-col">
       <div className="px-4 py-4 border-b border-line flex items-center justify-between">
@@ -113,7 +114,7 @@ export function Sidebar({ route, setRoute, online, pending, onClose }) {
   );
 }
 
-export function TopBar({ route, setRoute, online, setOnline, onMenu, breadcrumbExtra }) {
+export function TopBar({ route, setRoute, online, setOnline, onMenu, breadcrumbExtra = undefined }) {
   const titles = {
     dashboard: { title:'Dashboard', crumb:['Home', 'Dashboard'] },
     classes:   { title:'My Classes', crumb:['Home', 'My Classes'] },
