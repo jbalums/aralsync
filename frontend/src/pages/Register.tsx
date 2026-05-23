@@ -1,111 +1,331 @@
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useNavigate, Link } from '@tanstack/react-router';
-import { authService } from '../modules/auth/auth.service';
-import { useAuthStore } from '../modules/auth/authStore';
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useNavigate, Link } from "@tanstack/react-router";
+import { authService } from "../modules/auth/auth.service";
+import { useAuthStore } from "../modules/auth/authStore";
 
-const schema = z.object({
-  name:     z.string().min(2, 'Full name is required'),
-  email:    z.string().min(1, 'Email is required').email('Invalid email'),
-  schoolId: z.string().min(1, 'School ID is required'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  confirm:  z.string(),
-}).refine((d) => d.password === d.confirm, {
-  message: 'Passwords do not match',
-  path: ['confirm'],
-});
+const schema = z
+	.object({
+		name: z.string().min(2, "Full name is required"),
+		email: z.string().min(1, "Email is required").email("Invalid email"),
+		schoolId: z.string().min(1, "School ID is required"),
+		password: z.string().min(8, "Password must be at least 8 characters"),
+		confirm: z.string(),
+	})
+	.refine((d) => d.password === d.confirm, {
+		message: "Passwords do not match",
+		path: ["confirm"],
+	});
 type FormValues = z.infer<typeof schema>;
 
 function generateDeviceId(): string {
-  return btoa(`${navigator.userAgent}-${Date.now()}`).slice(0, 32);
+	return btoa(`${navigator.userAgent}-${Date.now()}`).slice(0, 32);
 }
 
 export default function Register() {
-  const navigate = useNavigate();
-  const { setAuth } = useAuthStore();
-  const [serverError, setServerError] = useState('');
+	const navigate = useNavigate();
+	const { setAuth } = useAuthStore();
+	const [serverError, setServerError] = useState("");
+	const [showPassword, setShowPassword] = useState(false);
+	const [showConfirm, setShowConfirm] = useState(false);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-  });
+	const {
+		register,
+		handleSubmit,
+		formState: { errors, isSubmitting },
+	} = useForm<FormValues>({
+		resolver: zodResolver(schema),
+	});
 
-  const onSubmit = async (values: FormValues) => {
-    setServerError('');
-    try {
-      const result = await authService.register({
-        name: values.name,
-        email: values.email,
-        schoolId: values.schoolId,
-        password: values.password,
-        deviceId: generateDeviceId(),
-      });
-      await setAuth(result.user, result.tokens.accessToken, result.tokens.refreshToken);
-      void navigate({ to: '/app/dashboard' });
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setServerError(msg ?? 'Registration failed. Please try again.');
-    }
-  };
+	const onSubmit = async (values: FormValues) => {
+		setServerError("");
+		try {
+			const result = await authService.register({
+				name: values.name,
+				email: values.email,
+				schoolId: values.schoolId,
+				password: values.password,
+				deviceId: generateDeviceId(),
+			});
+			await setAuth(
+				result.user,
+				result.tokens.accessToken,
+				result.tokens.refreshToken,
+			);
+			void navigate({ to: "/app/dashboard" });
+		} catch (err: unknown) {
+			const msg = (err as { response?: { data?: { message?: string } } })
+				?.response?.data?.message;
+			setServerError(msg ?? "Registration failed. Please try again.");
+		}
+	};
 
-  const field = (id: keyof FormValues, label: string, type = 'text', autoComplete?: string) => (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-[13px] font-medium text-navy">{label}</label>
-      <input
-        id={id}
-        type={type}
-        autoComplete={autoComplete}
-        {...register(id)}
-        className={`h-[42px] px-3 rounded-lg border text-[14px] bg-white outline-none transition-all
-          focus:border-primary focus:ring-4 focus:ring-primary/10
-          ${errors[id] ? 'border-red-400' : 'border-line'}`}
-      />
-      {errors[id] && <span className="text-[12px] text-red-500">{errors[id]?.message}</span>}
-    </div>
-  );
+	const EyeIcon = ({ visible }: { visible: boolean }) => (
+		<svg
+			width="16"
+			height="16"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="2"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+		>
+			{visible ? (
+				<>
+					<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+					<path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+					<line x1="1" y1="1" x2="23" y2="23" />
+				</>
+			) : (
+				<>
+					<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+					<circle cx="12" cy="12" r="3" />
+				</>
+			)}
+		</svg>
+	);
 
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12 bg-surface">
-      <div className="w-full max-w-[420px]">
-        {/* Logo */}
-        <div className="mb-8 flex items-center gap-2">
-          <span className="w-9 h-9 rounded-md bg-primary/10 inline-flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-              <path d="M5 12.55a11 11 0 0 1 14 0"/><path d="M8.5 16a6.5 6.5 0 0 1 7 0"/><circle cx="12" cy="20" r="1.2" fill="currentColor" stroke="none"/>
-            </svg>
-          </span>
-          <span className="text-[20px] font-bold tracking-tight text-navy">Aral<span className="font-medium text-muted">Sync</span></span>
-        </div>
+	return (
+		<div className="min-h-screen grid grid-cols-1 lg:grid-cols-[1.05fr_1fr]">
+			{/* Brand panel */}
+			<aside
+				className="relative hidden lg:flex flex-col justify-between p-10 text-white overflow-hidden"
+				style={{
+					background:
+						"linear-gradient(140deg, #003f13 0%, #0a4426eb 45%, #10b941c7 110%)",
+				}}
+			>
+				<div
+					className="absolute inset-0 opacity-25"
+					style={{
+						backgroundImage:
+							"linear-gradient(rgba(15,118,110,0.12) 1px,transparent 1px),linear-gradient(90deg,rgba(15,118,110,0.12) 1px,transparent 1px)",
+						backgroundSize: "28px 28px",
+					}}
+				/>
 
-        <h2 className="text-[24px] font-bold text-navy tracking-tight">Create your account</h2>
-        <p className="mt-1 text-sm text-muted">
-          Already have one?{' '}
-          <Link to="/login" className="text-primary font-medium hover:underline">Sign in</Link>
-        </p>
+				<div className="relative">
+					<Link to="/">
+						<img
+							src="/logo.png"
+							alt="AralSync"
+							style={{ height: 88, objectFit: "contain" }}
+							draggable={false}
+						/>
+					</Link>
+				</div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-8 flex flex-col gap-4" noValidate>
-          {serverError && (
-            <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">
-              {serverError}
-            </div>
-          )}
-          {field('name',     'Full name',          'text',     'name')}
-          {field('email',    'Email address',      'email',    'email')}
-          {field('schoolId', 'School ID')}
-          {field('password', 'Password',           'password', 'new-password')}
-          {field('confirm',  'Confirm password',   'password', 'new-password')}
+				<div className="relative">
+					<div className="text-[12px] font-semibold tracking-[0.18em] uppercase text-emerald-200/90">
+						Get started
+					</div>
+					<h1 className="text-[40px] font-bold tracking-tight leading-[1.05] mt-3 max-w-md">
+						Teach more.
+						<br />
+						Sync seamlessly.
+					</h1>
+					<p className="mt-4 text-white/75 text-[15px] max-w-md leading-relaxed">
+						Set up your classroom in minutes — attendance, grades,
+						and schedules, all offline-ready from day one.
+					</p>
+				</div>
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="mt-2 h-[42px] rounded-lg bg-primary text-white text-[14px] font-semibold
-              hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? 'Creating account…' : 'Create account'}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
+				<div className="relative text-[12px] text-white/45">
+					© {new Date().getFullYear()} AralSync
+				</div>
+			</aside>
+
+			{/* Form panel */}
+			<main className="flex flex-col items-center justify-center px-6 py-12 bg-surface min-h-screen lg:min-h-0">
+				{/* Mobile logo */}
+				<div className="lg:hidden mb-8">
+					<img
+						src="/logo.png"
+						alt="AralSync"
+						style={{ height: 38, objectFit: "contain" }}
+						draggable={false}
+					/>
+				</div>
+
+				<div className="w-full max-w-95">
+					<h2 className="text-[24px] font-bold text-navy tracking-tight">
+						Create your account
+					</h2>
+					<p className="mt-1 text-sm text-muted">
+						Already have one?{" "}
+						<Link
+							to="/login"
+							className="text-primary font-medium hover:underline"
+						>
+							Sign in
+						</Link>
+					</p>
+
+					<form
+						onSubmit={handleSubmit(onSubmit)}
+						className="mt-8 flex flex-col gap-4"
+						noValidate
+					>
+						{serverError && (
+							<div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">
+								{serverError}
+							</div>
+						)}
+
+						{/* Full name */}
+						<div className="flex flex-col gap-1">
+							<label
+								htmlFor="name"
+								className="text-[13px] font-medium text-navy"
+							>
+								Full name
+							</label>
+							<input
+								id="name"
+								type="text"
+								autoComplete="name"
+								autoFocus
+								{...register("name")}
+								className={`h-10.5 px-3 rounded-lg border text-[14px] bg-white outline-none transition-all
+                  focus:border-primary focus:ring-4 focus:ring-primary/10
+                  ${errors.name ? "border-red-400" : "border-line"}`}
+							/>
+							{errors.name && (
+								<span className="text-[12px] text-red-500">
+									{errors.name.message}
+								</span>
+							)}
+						</div>
+
+						{/* Email */}
+						<div className="flex flex-col gap-1">
+							<label
+								htmlFor="email"
+								className="text-[13px] font-medium text-navy"
+							>
+								Email address
+							</label>
+							<input
+								id="email"
+								type="email"
+								autoComplete="email"
+								{...register("email")}
+								className={`h-10.5 px-3 rounded-lg border text-[14px] bg-white outline-none transition-all
+                  focus:border-primary focus:ring-4 focus:ring-primary/10
+                  ${errors.email ? "border-red-400" : "border-line"}`}
+							/>
+							{errors.email && (
+								<span className="text-[12px] text-red-500">
+									{errors.email.message}
+								</span>
+							)}
+						</div>
+
+						{/* School ID */}
+						<div className="flex flex-col gap-1">
+							<label
+								htmlFor="schoolId"
+								className="text-[13px] font-medium text-navy"
+							>
+								School ID
+							</label>
+							<input
+								id="schoolId"
+								type="text"
+								{...register("schoolId")}
+								className={`h-10.5 px-3 rounded-lg border text-[14px] bg-white outline-none transition-all
+                  focus:border-primary focus:ring-4 focus:ring-primary/10
+                  ${errors.schoolId ? "border-red-400" : "border-line"}`}
+							/>
+							{errors.schoolId && (
+								<span className="text-[12px] text-red-500">
+									{errors.schoolId.message}
+								</span>
+							)}
+						</div>
+
+						{/* Password */}
+						<div className="flex flex-col gap-1">
+							<label
+								htmlFor="password"
+								className="text-[13px] font-medium text-navy"
+							>
+								Password
+							</label>
+							<div className="relative">
+								<input
+									id="password"
+									type={showPassword ? "text" : "password"}
+									autoComplete="new-password"
+									{...register("password")}
+									className={`h-10.5 w-full px-3 pr-10 rounded-lg border text-[14px] bg-white outline-none transition-all
+                    focus:border-primary focus:ring-4 focus:ring-primary/10
+                    ${errors.password ? "border-red-400" : "border-line"}`}
+								/>
+								<button
+									type="button"
+									onClick={() => setShowPassword((v) => !v)}
+									className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-navy"
+									tabIndex={-1}
+								>
+									<EyeIcon visible={showPassword} />
+								</button>
+							</div>
+							{errors.password && (
+								<span className="text-[12px] text-red-500">
+									{errors.password.message}
+								</span>
+							)}
+						</div>
+
+						{/* Confirm password */}
+						<div className="flex flex-col gap-1">
+							<label
+								htmlFor="confirm"
+								className="text-[13px] font-medium text-navy"
+							>
+								Confirm password
+							</label>
+							<div className="relative">
+								<input
+									id="confirm"
+									type={showConfirm ? "text" : "password"}
+									autoComplete="new-password"
+									{...register("confirm")}
+									className={`h-10.5 w-full px-3 pr-10 rounded-lg border text-[14px] bg-white outline-none transition-all
+                    focus:border-primary focus:ring-4 focus:ring-primary/10
+                    ${errors.confirm ? "border-red-400" : "border-line"}`}
+								/>
+								<button
+									type="button"
+									onClick={() => setShowConfirm((v) => !v)}
+									className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-navy"
+									tabIndex={-1}
+								>
+									<EyeIcon visible={showConfirm} />
+								</button>
+							</div>
+							{errors.confirm && (
+								<span className="text-[12px] text-red-500">
+									{errors.confirm.message}
+								</span>
+							)}
+						</div>
+
+						<button
+							type="submit"
+							disabled={isSubmitting}
+							className="mt-2 h-10.5 rounded-lg bg-primary text-white text-[14px] font-semibold
+                hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+						>
+							{isSubmitting ? "Creating account…" : "Create account"}
+						</button>
+					</form>
+				</div>
+			</main>
+		</div>
+	);
 }
