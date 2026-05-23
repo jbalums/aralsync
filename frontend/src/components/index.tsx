@@ -506,57 +506,30 @@ export function ConnPill({ online }) {
 }
 
 // AralSync wordmark
-export function Logo({ size = 18, withTag = false, className = "" }) {
+export function Logo({ size = 18, withTag = false, className = "", iconOnly = false }) {
+	const logoHeight = size + 12;
 	return (
 		<div className={`flex items-center gap-2 ${className}`}>
-			<span
-				className="relative inline-flex items-center justify-center rounded-md"
-				style={{
-					width: size + 10,
-					height: size + 10,
-					background: "#0F766E",
-				}}
-			>
-				<svg
-					width={size}
-					height={size}
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="white"
-					strokeWidth="2.2"
-					strokeLinecap="round"
-					strokeLinejoin="round"
-				>
-					<path d="M5 12.55a11 11 0 0 1 14 0" />
-					<path d="M8.5 16a6.5 6.5 0 0 1 7 0" />
-					<circle
-						cx="12"
-						cy="20"
-						r="1.2"
-						fill="white"
-						stroke="none"
-					/>
-				</svg>
-			</span>
-			<span className="leading-none">
-				<span
-					className="font-extrabold tracking-tight text-primary"
-					style={{ fontSize: size + 6 }}
-				>
-					Aral
-				</span>
-				<span
-					className="font-medium tracking-tight text-navy/80"
-					style={{ fontSize: size + 6 }}
-				>
-					Sync
-				</span>
-				{withTag && (
-					<div className="text-[11px] text-muted mt-1">
-						Teach more. Sync seamlessly.
-					</div>
-				)}
-			</span>
+			{iconOnly ? (
+				<img
+					src="/icon.png"
+					alt="AralSync"
+					style={{ height: logoHeight, width: logoHeight, objectFit: 'contain' }}
+					draggable={false}
+				/>
+			) : (
+				<img
+					src="/logo.png"
+					alt="AralSync"
+					style={{ height: logoHeight, objectFit: 'contain' }}
+					draggable={false}
+				/>
+			)}
+			{withTag && (
+				<div className="text-[11px] text-muted mt-1">
+					Teach more. Sync seamlessly.
+				</div>
+			)}
 		</div>
 	);
 }

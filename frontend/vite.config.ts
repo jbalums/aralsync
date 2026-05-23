@@ -43,7 +43,8 @@ export default defineConfig({
         display: 'standalone',
         start_url: '/',
         icons: [
-          { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' },
+          { src: '/icon.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/icon.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
     }),
