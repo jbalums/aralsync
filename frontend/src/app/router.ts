@@ -1,9 +1,11 @@
 import { createRouter, createRoute, createRootRoute, redirect, type RouteComponent } from '@tanstack/react-router';
 import { lazy } from 'react';
+import { useAuthStore } from '../modules/auth/authStore';
 
 // Lazy-load page components to keep initial bundle small
 const Landing       = lazy(() => import('../pages/Landing'));
 const SignIn        = lazy(() => import('../pages/SignIn'));
+const Register      = lazy(() => import('../pages/Register'));
 const AppShell      = lazy(() => import('../AppShell'));
 // Prototype pages: still have old routing props — cast until rewritten per phase
 const PageDashboard      = lazy(() => import('../pages/Dashboard').then(m => ({ default: m.PageDashboard }))) as unknown as RouteComponent;
@@ -35,6 +37,12 @@ export const loginRoute = createRoute({
   component: SignIn,
 });
 
+export const registerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/register',
+  component: Register,
+});
+
 // Keep /signin alias for backward-compat with existing landing page links
 export const signinRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -42,11 +50,17 @@ export const signinRoute = createRoute({
   beforeLoad: () => { throw redirect({ to: '/login' }); },
 });
 
-// ─── App layout (auth guard added in Phase 2) ─────────────
+// ─── App layout — auth-guarded ────────────────────────────
 export const appRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/app',
   component: AppShell,
+  beforeLoad: () => {
+    const { accessToken, isHydrated } = useAuthStore.getState();
+    if (isHydrated && !accessToken) {
+      throw redirect({ to: '/login' });
+    }
+  },
 });
 
 export const appIndexRoute = createRoute({
@@ -131,6 +145,7 @@ export const settingsRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   landingRoute,
   loginRoute,
+  registerRoute,
   signinRoute,
   appRoute.addChildren([
     appIndexRoute,

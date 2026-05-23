@@ -13,6 +13,7 @@ export interface User {
   schoolId: string;
   role: UserRole;
   deviceId: string;
+  refreshToken?: string;
 }
 
 export interface School {

@@ -6,17 +6,39 @@ import { router } from './app/router';
 import { queryClient } from './app/queryClient';
 import { configureHttp } from './services/http';
 import { useAuthStore } from './modules/auth/authStore';
+import { authService } from './modules/auth/auth.service';
 import { initBackgroundSync } from './offline/backgroundSync';
+import { db } from './db';
 import './index.css';
 
 function AppRoot() {
   useEffect(() => {
+    const { setAuth, setToken, clearAuth, setHydrated } = useAuthStore.getState();
+
     configureHttp({
-      getToken: () => useAuthStore.getState().accessToken,
-      getRefreshToken: () => null,
-      onRefresh: (t) => useAuthStore.getState().setToken(t),
-      onLogout: () => useAuthStore.getState().clearAuth(),
+      getToken:        () => useAuthStore.getState().accessToken,
+      getRefreshToken: () => useAuthStore.getState().user?.refreshToken ?? null,
+      onRefresh:       (t) => setToken(t),
+      onLogout:        () => { void clearAuth(); },
     });
+
+    // Session rehydration: find stored user with a refresh token in Dexie
+    const hydrate = async () => {
+      try {
+        const stored = await db.users.filter((u) => Boolean(u.refreshToken)).first();
+        if (stored?.refreshToken) {
+          const tokens = await authService.refresh(stored.refreshToken);
+          const user = await authService.me();
+          await setAuth(user, tokens.accessToken, tokens.refreshToken);
+        }
+      } catch {
+        await clearAuth();
+      } finally {
+        setHydrated();
+      }
+    };
+
+    void hydrate();
     return initBackgroundSync();
   }, []);
 
