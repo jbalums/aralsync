@@ -28,7 +28,7 @@ export function validateQuery(schema: z.ZodTypeAny): RequestHandler {
       });
       return;
     }
-    req.query = result.data as typeof req.query;
+    // Express 5: req.query is a read-only getter — validation is done, don't reassign
     next();
   };
 }
@@ -44,7 +44,7 @@ export function validateParams(schema: z.ZodTypeAny): RequestHandler {
       });
       return;
     }
-    req.params = result.data as typeof req.params;
+    // Express 5: req.params is a read-only getter — validation is done, don't reassign
     next();
   };
 }
