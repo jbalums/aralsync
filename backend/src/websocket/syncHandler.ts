@@ -1,18 +1,20 @@
 import { Server, Socket } from 'socket.io';
 
+async function emitPeerCount(io: Server, roomName: string): Promise<void> {
+  const sockets = await io.in(roomName).fetchSockets();
+  io.to(roomName).emit('room-peers', { count: sockets.length });
+}
+
 export function registerSyncHandlers(io: Server): void {
   io.on('connection', (socket: Socket) => {
-    socket.on('join-school', (schoolId: string) => {
-      void socket.join(`school:${schoolId}`);
-    });
+    let currentRoom: string | null = null;
 
-    socket.on('sync-push', (_payload: unknown) => {
-      // Full implementation in sync module (Step 12)
-      // Broadcasts update to school room after processing
-    });
-
-    socket.on('sync-pull', (_payload: unknown) => {
-      // Full implementation in sync module (Step 12)
+    socket.on('join-school', async (data: { schoolId: string } | string) => {
+      const schoolId = typeof data === 'string' ? data : data.schoolId;
+      const roomName = `school:${schoolId}`;
+      await socket.join(roomName);
+      currentRoom = roomName;
+      void emitPeerCount(io, roomName);
     });
 
     socket.on('ping', () => {
@@ -20,7 +22,7 @@ export function registerSyncHandlers(io: Server): void {
     });
 
     socket.on('disconnect', () => {
-      console.log(`Socket disconnected: ${socket.id}`);
+      if (currentRoom) void emitPeerCount(io, currentRoom);
     });
   });
 }

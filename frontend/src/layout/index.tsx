@@ -7,7 +7,8 @@ import {
   Dropdown,
   ConnPill,
 } from '../components';
-import { TEACHER, SYNC_STATE, NOTIFICATIONS } from '../data/mockData';
+import { TEACHER, NOTIFICATIONS } from '../data/mockData';
+import { useSyncStore } from '../modules/sync/syncStore';
 
 // ─── APP SHELL: SIDEBAR + TOPBAR + MOBILE NAV ────────────
 
@@ -40,7 +41,10 @@ export const MOBILE_TABS = [
   { id:'more',       label:'More',       icon:'more-horizontal' },
 ];
 
-export function Sidebar({ route, setRoute, online, pending, onClose = () => {} }) {
+export function Sidebar({ route, setRoute, online, onClose = () => {} }) {
+  const queueCount = useSyncStore(s => s.queueCount);
+  const lastSyncAt = useSyncStore(s => s.lastSyncAt);
+  const lastSyncLabel = lastSyncAt ? new Date(lastSyncAt).toLocaleTimeString() : 'Never';
   return (
     <aside className="h-full w-[248px] shrink-0 bg-white border-r border-line flex flex-col">
       <div className="px-4 py-4 border-b border-line flex items-center justify-between">
@@ -68,8 +72,8 @@ export function Sidebar({ route, setRoute, online, pending, onClose = () => {} }
                     {isActive && <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r bg-primary"></span>}
                     <Icon name={item.icon} size={16} className={isActive ? 'text-primary' : 'text-muted'} />
                     <span className="flex-1">{item.label}</span>
-                    {item.id === 'sync' && pending > 0 && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800">{pending}</span>
+                    {item.id === 'sync' && queueCount > 0 && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800">{queueCount}</span>
                     )}
                     {item.badge && (
                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gradient-to-br from-primary to-emerald-500 text-white tracking-wide">{item.badge}</span>
@@ -86,11 +90,11 @@ export function Sidebar({ route, setRoute, online, pending, onClose = () => {} }
         {/* Sync badge */}
         <button onClick={() => setRoute('sync')} className="rounded-md border border-line bg-surface/60 hover:bg-white p-2.5 text-left tx">
           <div className="flex items-center gap-2">
-            <span className={`dot pulse-dot`} style={{background: pending? '#F59E0B':'#10B981', width:9, height:9}}></span>
-            <span className="text-[12px] font-semibold text-navy">{pending} pending sync</span>
+            <span className="dot pulse-dot" style={{ background: queueCount ? '#F59E0B' : '#10B981', width: 9, height: 9 }}/>
+            <span className="text-[12px] font-semibold text-navy">{queueCount} pending sync</span>
             <Icon name="chevron-right" size={14} className="ml-auto text-muted"/>
           </div>
-          <div className="text-[11px] text-muted mt-1">Last sync · {SYNC_STATE.lastSync}</div>
+          <div className="text-[11px] text-muted mt-1">Last sync · {lastSyncLabel}</div>
         </button>
 
         {/* Teacher card */}
@@ -114,7 +118,7 @@ export function Sidebar({ route, setRoute, online, pending, onClose = () => {} }
   );
 }
 
-export function TopBar({ route, setRoute, online, setOnline, onMenu, breadcrumbExtra = undefined }) {
+export function TopBar({ route, setRoute, online, onMenu, breadcrumbExtra = undefined }) {
   const titles = {
     dashboard: { title:'Dashboard', crumb:['Home', 'Dashboard'] },
     classes:   { title:'My Classes', crumb:['Home', 'My Classes'] },
@@ -153,9 +157,9 @@ export function TopBar({ route, setRoute, online, setOnline, onMenu, breadcrumbE
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
-        <button onClick={() => setOnline(o => !o)} className="hidden sm:flex items-center" title="Toggle simulated connection">
+        <div className="hidden sm:flex items-center">
           <ConnPill online={online}/>
-        </button>
+        </div>
 
         <div className="relative">
           <button className="relative w-9 h-9 rounded-md hover:bg-slate-100 flex items-center justify-center" onClick={() => setNotifsOpen(o => !o)} aria-label="Notifications">

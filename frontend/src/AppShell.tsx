@@ -70,7 +70,6 @@ export default function AppShell() {
               route={activeSegment}
               setRoute={handleNavigate}
               online={online}
-              pending={pending}
             />
           </div>
 
@@ -83,7 +82,6 @@ export default function AppShell() {
                   route={activeSegment}
                   setRoute={handleNavigate}
                   online={online}
-                  pending={pending}
                   onClose={() => setSidebarOpen(false)}
                 />
               </div>
@@ -96,7 +94,6 @@ export default function AppShell() {
               route={activeSegment}
               setRoute={handleNavigate}
               online={online}
-              setOnline={setOnline}
               onMenu={() => setSidebarOpen(true)}
             />
 

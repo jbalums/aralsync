@@ -57,6 +57,7 @@ const io = new SocketIOServer(server, {
 	},
 });
 
+app.locals['io'] = io;
 registerSyncHandlers(io);
 
 async function bootstrap(): Promise<void> {
