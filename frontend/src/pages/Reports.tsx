@@ -47,7 +47,6 @@ function classifyLabel(c: string | null): string {
 // ── main ──────────────────────────────────────────────────────────────────────
 export function PageReports() {
   const toast = useToast();
-  const user  = useAuthStore(s => s.user);
 
   const { data: classLoads = [] } = useClassLoads();
 
