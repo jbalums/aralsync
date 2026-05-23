@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import * as XLSX from 'xlsx';
 import {
   Icon, Card, Modal, StatCard, SectionHeader, Btn, Badge, Field, TextInput, useToast,
 } from '../components';
-import { schoolsService, type CreateSchoolPayload } from '../modules/classrooms/schools.service';
+import {
+  schoolsService,
+  type CreateSchoolPayload,
+  type BulkSchoolRow,
+  type BulkCreateSchoolsResult,
+} from '../modules/classrooms/schools.service';
 import { useAuthStore } from '../modules/auth/authStore';
 import type { School } from '../shared/types';
 
@@ -26,6 +32,7 @@ export function PageOwnerDashboard() {
   const qc = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<School | null>(null);
 
   const { data: schools = [], isLoading } = useQuery({
@@ -130,14 +137,24 @@ export function PageOwnerDashboard() {
               Manage all registered schools. Teachers can only register once their school is listed here.
             </p>
           </div>
-          <Btn
-            size="sm"
-            icon="plus"
-            className="bg-white! text-blue-800! hover:bg-blue-50!"
-            onClick={openCreate}
-          >
-            Add School
-          </Btn>
+          <div className="flex gap-2">
+            <Btn
+              size="sm"
+              icon="upload"
+              className="bg-white/15! text-white! hover:bg-white/25! border border-white/30!"
+              onClick={() => setBulkOpen(true)}
+            >
+              Bulk Import
+            </Btn>
+            <Btn
+              size="sm"
+              icon="plus"
+              className="bg-white! text-blue-800! hover:bg-blue-50!"
+              onClick={openCreate}
+            >
+              Add School
+            </Btn>
+          </div>
         </div>
       </Card>
 
@@ -154,6 +171,7 @@ export function PageOwnerDashboard() {
         <div className="px-4 py-3 border-b border-line flex items-center gap-3 flex-wrap">
           <SectionHeader title="Registered Schools" subtitle={`${schools.length} school${schools.length !== 1 ? 's' : ''} total`} />
           <span className="ml-auto" />
+          <Btn variant="ghost" size="sm" icon="upload" onClick={() => setBulkOpen(true)}>Bulk Import</Btn>
           <Btn variant="primary" size="sm" icon="plus" onClick={openCreate}>Add School</Btn>
         </div>
 
@@ -276,6 +294,366 @@ export function PageOwnerDashboard() {
           </div>
         </form>
       </Modal>
+
+      <ImportSchoolsModal open={bulkOpen} onClose={() => setBulkOpen(false)} />
     </div>
+  );
+}
+
+// ─── Bulk import modal ─────────────────────────────────────────
+
+type ParsedRow = BulkSchoolRow;
+
+function normalizeBulkRow(raw: Record<string, unknown>): ParsedRow | null {
+  const lookup: Record<string, string> = {};
+  for (const [k, v] of Object.entries(raw)) {
+    lookup[k.trim().toLowerCase().replace(/[\s_-]+/g, '')] = String(v ?? '').trim();
+  }
+  const schoolId = lookup['schoolid'] ?? lookup['depedid'] ?? lookup['id'] ?? '';
+  const name = lookup['schoolname'] ?? lookup['name'] ?? '';
+  const address = lookup['address'] ?? '';
+  if (!schoolId || !name || name.length < 2) return null;
+  return {
+    schoolId,
+    name,
+    address: address && address !== '-' ? address : undefined,
+  };
+}
+
+function downloadTemplate() {
+  const csv = 'School ID,School Name,Address\n407535,"BIT International College-Carmen","Carmen, Bohol"\n';
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'schools-template.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function parseCSVString(text: string): { rows: ParsedRow[]; error: string } {
+  try {
+    const wb = XLSX.read(text, { type: 'string' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: '' });
+    const parsed = raw.map(normalizeBulkRow).filter(Boolean) as ParsedRow[];
+    if (parsed.length === 0) {
+      return { rows: [], error: 'No valid rows found. Expected columns: School ID, School Name, Address' };
+    }
+    return { rows: parsed, error: '' };
+  } catch {
+    return { rows: [], error: 'Failed to parse CSV content. Check format and try again.' };
+  }
+}
+
+function ImportSchoolsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { push } = useToast();
+  const qc = useQueryClient();
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const [mode, setMode] = useState<'file' | 'paste'>('file');
+  const [division, setDivision] = useState('');
+  const [district, setDistrict] = useState('');
+  const [rows, setRows] = useState<ParsedRow[]>([]);
+  const [fileName, setFileName] = useState('');
+  const [pasteText, setPasteText] = useState('');
+  const [parseError, setParseError] = useState('');
+  const [result, setResult] = useState<BulkCreateSchoolsResult | null>(null);
+
+  const importMutation = useMutation({
+    mutationFn: () =>
+      schoolsService.bulkCreateSchools({
+        division: division.trim(),
+        district: district.trim() || undefined,
+        schools: rows,
+      }),
+    onSuccess: (r) => {
+      setResult(r);
+      void qc.invalidateQueries({ queryKey: ['schools'] });
+      push({
+        type: 'success',
+        title: `Imported ${r.created} school${r.created !== 1 ? 's' : ''}`,
+      });
+    },
+    onError: (err: Error) => {
+      push({ type: 'error', title: err.message });
+    },
+  });
+
+  const handleFile = useCallback((file: File) => {
+    setParseError('');
+    setRows([]);
+    setResult(null);
+    if (file.size > 5 * 1024 * 1024) {
+      setParseError('File too large. Max 5 MB.');
+      return;
+    }
+    setFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const wb = XLSX.read(e.target?.result, { type: 'binary' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: '' });
+        const parsed = raw.map(normalizeBulkRow).filter(Boolean) as ParsedRow[];
+        if (parsed.length === 0) {
+          setParseError('No valid rows found. Expected columns: School ID, School Name, Address');
+        } else {
+          setRows(parsed);
+        }
+      } catch {
+        setParseError('Failed to parse file. Ensure it is a valid CSV or Excel file.');
+      }
+    };
+    reader.readAsBinaryString(file);
+  }, []);
+
+  const handlePasteChange = useCallback((text: string) => {
+    setPasteText(text);
+    setResult(null);
+    if (!text.trim()) {
+      setRows([]);
+      setParseError('');
+      return;
+    }
+    const { rows: parsed, error } = parseCSVString(text);
+    setRows(parsed);
+    setParseError(error);
+  }, []);
+
+  function switchMode(next: 'file' | 'paste') {
+    setMode(next);
+    setRows([]);
+    setParseError('');
+    setFileName('');
+    setPasteText('');
+    setResult(null);
+    if (fileRef.current) fileRef.current.value = '';
+  }
+
+  const onDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    },
+    [handleFile],
+  );
+
+  function reset() {
+    setRows([]);
+    setFileName('');
+    setPasteText('');
+    setParseError('');
+    setResult(null);
+    setDivision('');
+    setDistrict('');
+    setMode('file');
+    if (fileRef.current) fileRef.current.value = '';
+  }
+
+  function handleClose() {
+    onClose();
+    reset();
+  }
+
+  const divisionValid = division.trim().length >= 2;
+  const canImport = divisionValid && rows.length > 0 && !importMutation.isPending;
+
+  return (
+    <Modal open={open} onClose={handleClose} title="Bulk Import Schools" width="max-w-2xl">
+      {result ? (
+        <div className="space-y-4">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-center">
+              <div className="text-[24px] font-semibold text-emerald-700 font-mono">{result.created}</div>
+              <div className="text-[12px] text-emerald-600">Created</div>
+            </div>
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-center">
+              <div className="text-[24px] font-semibold text-amber-700 font-mono">{result.skipped.length}</div>
+              <div className="text-[12px] text-amber-600">Skipped</div>
+            </div>
+            <div className="rounded-md border border-red-200 bg-red-50 p-3 text-center">
+              <div className="text-[24px] font-semibold text-red-700 font-mono">{result.failed.length}</div>
+              <div className="text-[12px] text-red-600">Failed</div>
+            </div>
+          </div>
+
+          {(result.skipped.length > 0 || result.failed.length > 0) && (
+            <div className="rounded-md border border-line overflow-hidden">
+              <div className="px-3 py-2 bg-surface text-[12px] font-semibold text-navy">
+                Issues
+              </div>
+              <div className="max-h-56 overflow-y-auto">
+                {[...result.skipped.map((r) => ({ ...r, kind: 'skipped' as const })),
+                  ...result.failed.map((r) => ({ ...r, kind: 'failed' as const }))].map((r, i) => (
+                  <div key={i} className="px-3 py-2 border-t border-line text-[12px] flex items-start gap-2">
+                    <span className={`mt-0.5 inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${r.kind === 'skipped' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
+                      {r.kind}
+                    </span>
+                    <div className="flex-1">
+                      <span className="font-mono text-navy">{r.schoolId}</span>
+                      <span className="text-navy ml-2">{r.name}</span>
+                      <div className="text-muted">{r.reason}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Btn variant="ghost" size="sm" onClick={() => { reset(); }}>Import Another</Btn>
+            <Btn variant="primary" size="sm" onClick={handleClose}>Done</Btn>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Division" required hint={!divisionValid && division.length > 0 ? 'Required' : undefined}>
+              <TextInput
+                value={division}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDivision(e.target.value)}
+                placeholder="e.g. Division of Bohol"
+              />
+            </Field>
+            <Field label="District">
+              <TextInput
+                value={district}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDistrict(e.target.value)}
+                placeholder="e.g. Tagbilaran District"
+              />
+            </Field>
+          </div>
+
+          <div className="flex items-center gap-1 rounded-md bg-surface p-1 w-fit">
+            <button
+              type="button"
+              onClick={() => switchMode('file')}
+              className={`px-3 py-1.5 rounded text-[12px] font-semibold transition-colors ${mode === 'file' ? 'bg-white text-navy shadow-sm' : 'text-muted hover:text-navy'}`}
+            >
+              <Icon name="upload-cloud" size={13} className="mr-1.5" /> Upload file
+            </button>
+            <button
+              type="button"
+              onClick={() => switchMode('paste')}
+              className={`px-3 py-1.5 rounded text-[12px] font-semibold transition-colors ${mode === 'paste' ? 'bg-white text-navy shadow-sm' : 'text-muted hover:text-navy'}`}
+            >
+              <Icon name="clipboard-paste" size={13} className="mr-1.5" /> Paste CSV
+            </button>
+          </div>
+
+          {mode === 'file' ? (
+            <div
+              onDrop={onDrop}
+              onDragOver={(e) => e.preventDefault()}
+              onClick={() => fileRef.current?.click()}
+              className="rounded-md border-2 border-dashed border-line bg-surface/50 p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+            >
+              <Icon name="upload-cloud" size={36} className="text-primary mx-auto" />
+              <div className="text-[14px] font-semibold text-navy mt-3">
+                {rows.length > 0 ? `${rows.length} row${rows.length !== 1 ? 's' : ''} ready` : 'Drop a CSV / Excel file here'}
+              </div>
+              <div className="text-[12px] text-muted mt-1">
+                or <span className="text-primary font-semibold">browse files</span> · max 5 MB · UTF-8
+              </div>
+              {fileName && rows.length > 0 && (
+                <div className="text-[11px] text-muted mt-2 font-mono">{fileName}</div>
+              )}
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleFile(f);
+                }}
+              />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <textarea
+                value={pasteText}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handlePasteChange(e.target.value)}
+                placeholder={'School ID,School Name,Address\n407535,"BIT International College-Carmen","Carmen, Bohol"\n…'}
+                spellCheck={false}
+                className="w-full h-48 rounded-md border border-line bg-white p-3 font-mono text-[12px] text-navy resize-y focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              />
+              <div className="text-[12px] text-muted flex items-center justify-between">
+                <span>Paste CSV with the header row included.</span>
+                {rows.length > 0 && (
+                  <span className="text-emerald-600 font-semibold">
+                    {rows.length} row{rows.length !== 1 ? 's' : ''} ready
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {parseError && (
+            <div className="text-[12px] text-red-500 rounded-md bg-red-50 border border-red-200 px-3 py-2">
+              {parseError}
+            </div>
+          )}
+
+          <div className="overflow-hidden rounded-md border border-line">
+            <div className="px-3 py-2 bg-surface text-[12px] font-semibold text-navy flex items-center justify-between">
+              <span>Expected columns</span>
+              <button
+                type="button"
+                onClick={downloadTemplate}
+                className="text-primary hover:underline text-[11px] font-medium"
+              >
+                Download template
+              </button>
+            </div>
+            <table className="w-full text-[11.5px]">
+              <thead className="text-muted bg-surface/50">
+                <tr>
+                  <th className="px-3 py-1.5 text-left font-semibold">CSV column</th>
+                  <th className="px-3 py-1.5 text-left font-semibold">Required</th>
+                  <th className="px-3 py-1.5 text-left font-semibold">Example</th>
+                </tr>
+              </thead>
+              <tbody className="text-navy">
+                <tr className="border-t border-line">
+                  <td className="px-3 py-1.5 font-mono">School ID</td>
+                  <td className="px-3 py-1.5">Yes</td>
+                  <td className="px-3 py-1.5">407535</td>
+                </tr>
+                <tr className="border-t border-line">
+                  <td className="px-3 py-1.5 font-mono">School Name</td>
+                  <td className="px-3 py-1.5">Yes</td>
+                  <td className="px-3 py-1.5">BIT International College-Carmen</td>
+                </tr>
+                <tr className="border-t border-line">
+                  <td className="px-3 py-1.5 font-mono">Address</td>
+                  <td className="px-3 py-1.5">No</td>
+                  <td className="px-3 py-1.5">Carmen, Bohol</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Btn variant="ghost" size="sm" onClick={handleClose}>Cancel</Btn>
+            <Btn
+              variant="primary"
+              size="sm"
+              icon="upload"
+              disabled={!canImport}
+              onClick={() => importMutation.mutate()}
+            >
+              {importMutation.isPending
+                ? 'Importing…'
+                : `Import ${rows.length} school${rows.length !== 1 ? 's' : ''}`}
+            </Btn>
+          </div>
+        </div>
+      )}
+    </Modal>
   );
 }

@@ -6,6 +6,7 @@ import {
   createSchoolYearSchema,
   createSchoolSchema,
   updateSchoolSchema,
+  bulkCreateSchoolsSchema,
   schoolIdParamSchema,
   yearIdParamSchema,
 } from './school.schema';
@@ -18,6 +19,7 @@ router.use(authenticate);
 // Super-admin school management
 router.get('/', authorize(Role.SUPER_ADMIN), schoolController.listAll);
 router.post('/', authorize(Role.SUPER_ADMIN), validateBody(createSchoolSchema), schoolController.create);
+router.post('/bulk', authorize(Role.SUPER_ADMIN), validateBody(bulkCreateSchoolsSchema), schoolController.bulkCreate);
 router.put('/:id', authorize(Role.SUPER_ADMIN), validateParams(schoolIdParamSchema), validateBody(updateSchoolSchema), schoolController.update);
 
 // School year management

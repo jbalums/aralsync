@@ -15,6 +15,30 @@ export interface CreateSchoolPayload {
   address?: string;
 }
 
+export interface BulkSchoolRow {
+  schoolId: string;
+  name: string;
+  address?: string;
+}
+
+export interface BulkCreateSchoolsPayload {
+  division: string;
+  district?: string;
+  schools: BulkSchoolRow[];
+}
+
+export interface BulkRowIssue {
+  schoolId: string;
+  name: string;
+  reason: string;
+}
+
+export interface BulkCreateSchoolsResult {
+  created: number;
+  skipped: BulkRowIssue[];
+  failed: BulkRowIssue[];
+}
+
 export const schoolsService = {
   async listAll(): Promise<School[]> {
     const res = await http.get<{ data: School[] }>('/schools');
@@ -28,6 +52,11 @@ export const schoolsService = {
 
   async updateSchool(id: string, payload: Partial<CreateSchoolPayload>): Promise<School> {
     const res = await http.put<{ data: School }>(`/schools/${id}`, payload);
+    return res.data.data;
+  },
+
+  async bulkCreateSchools(payload: BulkCreateSchoolsPayload): Promise<BulkCreateSchoolsResult> {
+    const res = await http.post<{ data: BulkCreateSchoolsResult }>('/schools/bulk', payload);
     return res.data.data;
   },
 

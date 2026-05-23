@@ -23,6 +23,21 @@ export const schoolController = {
     }
   },
 
+  async bulkCreate(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await schoolService.bulkCreateSchools(
+        req.body as {
+          division: string;
+          district?: string;
+          schools: Array<{ schoolId: string; name: string; address?: string }>;
+        },
+      );
+      success(res, result, 201);
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const school = await schoolService.updateSchool(

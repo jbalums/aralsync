@@ -57,6 +57,77 @@ export const schoolService = {
     return mapSchool(school);
   },
 
+  async bulkCreateSchools(data: {
+    division: string;
+    district?: string;
+    schools: Array<{ schoolId: string; name: string; address?: string }>;
+  }) {
+    const ids = data.schools.map((s) => s.schoolId);
+    const existing = await School.find({ schoolId: { $in: ids } }, { schoolId: 1 }).lean();
+    const existingSet = new Set(existing.map((e) => e.schoolId));
+
+    const skipped: Array<{ schoolId: string; name: string; reason: string }> = [];
+    const failed: Array<{ schoolId: string; name: string; reason: string }> = [];
+    const toInsert: Array<{
+      schoolId: string;
+      name: string;
+      address: string;
+      division: string;
+      district: string;
+    }> = [];
+
+    const seenInBatch = new Set<string>();
+    for (const row of data.schools) {
+      if (existingSet.has(row.schoolId)) {
+        skipped.push({
+          schoolId: row.schoolId,
+          name: row.name,
+          reason: 'DepEd ID already exists',
+        });
+        continue;
+      }
+      if (seenInBatch.has(row.schoolId)) {
+        skipped.push({
+          schoolId: row.schoolId,
+          name: row.name,
+          reason: 'Duplicate row in CSV',
+        });
+        continue;
+      }
+      seenInBatch.add(row.schoolId);
+      toInsert.push({
+        schoolId: row.schoolId,
+        name: row.name,
+        address: row.address ?? '',
+        division: data.division,
+        district: data.district ?? '',
+      });
+    }
+
+    let created = 0;
+    if (toInsert.length > 0) {
+      try {
+        const inserted = await School.insertMany(toInsert, { ordered: false });
+        created = inserted.length;
+      } catch (err) {
+        const e = err as { insertedDocs?: unknown[]; writeErrors?: Array<{ index: number; errmsg?: string }> };
+        created = e.insertedDocs?.length ?? 0;
+        for (const we of e.writeErrors ?? []) {
+          const row = toInsert[we.index];
+          if (row) {
+            failed.push({
+              schoolId: row.schoolId,
+              name: row.name,
+              reason: we.errmsg ?? 'Insert failed',
+            });
+          }
+        }
+      }
+    }
+
+    return { created, skipped, failed };
+  },
+
 
   async getYears(schoolObjectId: string) {
     const years = await SchoolYear.find({ schoolId: schoolObjectId })

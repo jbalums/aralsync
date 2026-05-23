@@ -22,3 +22,18 @@ export const createSchoolSchema = z.object({
 });
 
 export const updateSchoolSchema = createSchoolSchema.partial();
+
+export const bulkCreateSchoolsSchema = z.object({
+  division: z.string().min(2, 'Division is required'),
+  district: z.string().optional(),
+  schools: z
+    .array(
+      z.object({
+        schoolId: z.string().min(1),
+        name: z.string().min(2),
+        address: z.string().optional(),
+      }),
+    )
+    .min(1, 'At least one school row is required')
+    .max(500, 'Cannot import more than 500 schools at once'),
+});
