@@ -38,3 +38,8 @@ export const bulkSyncSchema = z.object({
 export const attendanceIdParamSchema = z.object({
   id: z.string().min(1),
 });
+
+export const sf2SheetQuerySchema = z.object({
+  classLoadId: z.string().min(1),
+  month:       z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Month must be YYYY-MM'),
+});

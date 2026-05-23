@@ -11,3 +11,8 @@ export const quarterlyGradeQuerySchema = z.object({
   classLoadId: z.string().min(1),
   quarter:     quarterSchema,
 });
+
+export const reportCardQuerySchema = z.object({
+  studentId:    z.string().min(1),
+  schoolYearId: z.string().min(1),
+});

@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import { AttendanceRecord } from '../../database/models/AttendanceRecord.model';
 import { ClassLoad }        from '../../database/models/ClassLoad.model';
+import { Student }          from '../../database/models/Student.model';
+import { User }             from '../../database/models/User.model';
 
 type ClientRecord = {
   id:          string;
@@ -147,5 +149,83 @@ export const attendanceService = {
 
   async bulkSync(records: SubmitRecord[], teacherId: string) {
     return this.submit(records, teacherId);
+  },
+
+  async getSf2Sheet(classLoadId: string, month: string, teacherId: string) {
+    const load = await ClassLoad
+      .findOne({ _id: classLoadId, teacherId, isActive: true })
+      .populate<{ subjectId: { name: string }; sectionId: { name: string; gradeLevel: number } }>(
+        'subjectId sectionId',
+      )
+      .lean();
+    if (!load) return null;
+
+    const teacher = await User.findById(teacherId).lean();
+
+    const [year, monthNum] = month.split('-').map(Number);
+    const startDate = new Date(year, monthNum - 1, 1);
+    const endDate   = new Date(year, monthNum, 0); // last day of month
+
+    // Weekday day-numbers (Mon=1..Fri=5) for this month
+    const schoolDays: number[] = [];
+    for (let d = 1; d <= endDate.getDate(); d++) {
+      const dow = new Date(year, monthNum - 1, d).getDay();
+      if (dow >= 1 && dow <= 5) schoolDays.push(d);
+    }
+
+    const section = load.sectionId as { _id: mongoose.Types.ObjectId; name: string; gradeLevel: number };
+    const subject = load.subjectId as { _id: mongoose.Types.ObjectId; name: string };
+
+    const students = await Student
+      .find({ sectionId: section._id, isActive: true })
+      .sort({ lastName: 1, firstName: 1 })
+      .lean();
+
+    const records = await AttendanceRecord.find({
+      classLoadId: new mongoose.Types.ObjectId(classLoadId),
+      date: { $gte: startDate, $lte: endDate },
+    }).lean();
+
+    const MONTH_NAMES = [
+      'January','February','March','April','May','June',
+      'July','August','September','October','November','December',
+    ];
+
+    const studentRows = students.map((s) => {
+      const sid = (s._id as mongoose.Types.ObjectId).toString();
+      const attendance: Record<number, string> = {};
+      for (const r of records) {
+        if ((r.studentId as mongoose.Types.ObjectId).toString() === sid) {
+          attendance[new Date(r.date).getDate()] = r.status;
+        }
+      }
+      const totalAbsent = Object.values(attendance).filter(v => v === 'absent').length;
+      const totalLate   = Object.values(attendance).filter(v => v === 'late').length;
+      return {
+        id:          sid,
+        lastName:    s.lastName,
+        firstName:   s.firstName,
+        lrn:         s.lrn,
+        attendance,
+        totalAbsent,
+        totalLate,
+      };
+    });
+
+    return {
+      classLoad: {
+        subject:     subject.name,
+        section:     section.name,
+        gradeLevel:  section.gradeLevel,
+        quarter:     load.quarter,
+        roomNumber:  load.roomNumber,
+        teacherName: teacher ? teacher.fullName : '',
+      },
+      month:      `${MONTH_NAMES[monthNum - 1]} ${year}`,
+      year,
+      monthIndex: monthNum - 1,
+      schoolDays,
+      students:   studentRows,
+    };
   },
 };

@@ -69,4 +69,15 @@ export const attendanceController = {
       next(err);
     }
   },
+
+  async getSf2Sheet(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { classLoadId, month } = req.query as { classLoadId: string; month: string };
+      const sheet = await attendanceService.getSf2Sheet(classLoadId, month, req.user!.userId);
+      if (!sheet) { error(res, 'Class load not found', 404); return; }
+      success(res, sheet);
+    } catch (err) {
+      next(err);
+    }
+  },
 };

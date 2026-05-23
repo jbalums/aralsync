@@ -3,6 +3,8 @@ import { QuarterlyGrade } from '../../database/models/QuarterlyGrade.model';
 import { GradeEntry }     from '../../database/models/GradeEntry.model';
 import { ClassLoad }      from '../../database/models/ClassLoad.model';
 import { Student }        from '../../database/models/Student.model';
+import { Section }        from '../../database/models/Section.model';
+import { SchoolYear }     from '../../database/models/SchoolYear.model';
 import { computeQuarterlyGrade } from '../../shared/utils/gradeCompute';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -82,6 +84,74 @@ export const quarterlyGradeService = {
       { $set: { isFinalized: true } },
     );
     return { finalized: result.modifiedCount };
+  },
+
+  async getReportCard(studentId: string, schoolYearId: string) {
+    const student = await Student.findById(studentId).lean();
+    if (!student) return null;
+
+    const [section, schoolYear] = await Promise.all([
+      Section.findById(student.sectionId).lean(),
+      SchoolYear.findById(schoolYearId).lean(),
+    ]);
+
+    const classLoads = await ClassLoad
+      .find({ sectionId: student.sectionId, schoolYearId, isActive: true })
+      .populate<{ subjectId: { name: string; gradeLevel: number } }>('subjectId')
+      .lean();
+
+    const allGrades = await QuarterlyGrade.find({
+      studentId: new mongoose.Types.ObjectId(studentId),
+      classLoadId: { $in: classLoads.map(cl => cl._id) },
+    }).lean();
+
+    const QUARTERS = ['Q1', 'Q2', 'Q3', 'Q4'] as const;
+
+    const subjects = classLoads.map((cl) => {
+      const sub = cl.subjectId as { name: string; gradeLevel: number };
+      const clId = (cl._id as mongoose.Types.ObjectId).toString();
+      const gradesByQ: Record<string, number | null> = { Q1: null, Q2: null, Q3: null, Q4: null };
+
+      for (const g of allGrades) {
+        if (g.classLoadId.toString() === clId) {
+          gradesByQ[g.quarter] = g.transmutedGrade;
+        }
+      }
+
+      const computed = QUARTERS.map(q => gradesByQ[q]).filter((v): v is number => v !== null);
+      const finalGrade = computed.length
+        ? Math.round((computed.reduce((a, b) => a + b, 0) / computed.length) * 100) / 100
+        : 0;
+
+      return {
+        subjectName: sub.name,
+        classLoadId: clId,
+        grades:      gradesByQ,
+        finalGrade,
+        passed:      finalGrade >= 75,
+      };
+    });
+
+    const finalGrades = subjects.map(s => s.finalGrade).filter(g => g > 0);
+    const generalAvg = finalGrades.length
+      ? Math.round((finalGrades.reduce((a, b) => a + b, 0) / finalGrades.length) * 100) / 100
+      : 0;
+
+    return {
+      student: {
+        id:            (student._id as mongoose.Types.ObjectId).toString(),
+        lastName:      student.lastName,
+        firstName:     student.firstName,
+        middleInitial: student.middleInitial,
+        lrn:           student.lrn,
+        sectionName:   section?.name ?? '',
+        gradeLevel:    section?.gradeLevel ?? 0,
+      },
+      schoolYear: { id: schoolYearId, label: schoolYear?.label ?? '' },
+      subjects,
+      generalAverage:  generalAvg,
+      classification:  classifyHonors(generalAvg),
+    };
   },
 
   async getClassReport(classLoadId: string, quarter: string, teacherId: string) {

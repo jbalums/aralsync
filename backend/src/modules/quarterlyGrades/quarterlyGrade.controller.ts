@@ -36,4 +36,13 @@ export const quarterlyGradeController = {
       success(res, report);
     } catch (err) { next(err); }
   },
+
+  async getReportCard(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { studentId, schoolYearId } = req.query as { studentId: string; schoolYearId: string };
+      const card = await quarterlyGradeService.getReportCard(studentId, schoolYearId);
+      if (!card) { error(res, 'Student not found', 404); return; }
+      success(res, card);
+    } catch (err) { next(err); }
+  },
 };
