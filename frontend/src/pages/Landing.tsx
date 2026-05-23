@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@tanstack/react-router';
 
 // Marketing page — keeps the original HTML markup verbatim (including its
 // own <style> block) and re-runs lucide + reveal-on-scroll in a useEffect.
@@ -663,7 +663,7 @@ export default function Landing() {
       if (href.startsWith('http') || href.startsWith('mailto:') || href.startsWith('#') || a.target === '_blank') return;
       ev.preventDefault();
       // Strip query for matching but keep when navigating
-      navigate(href);
+      navigate({ to: href });
     };
     root && root.addEventListener('click', onClick);
 
