@@ -9,7 +9,10 @@ import { useAuthStore } from './modules/auth/authStore';
 import { authService } from './modules/auth/auth.service';
 import { initBackgroundSync } from './offline/backgroundSync';
 import { db } from './db';
+import { validateEnv } from './shared/utils/env';
 import './index.css';
+
+validateEnv();
 
 function AppRoot() {
   useEffect(() => {
