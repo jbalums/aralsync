@@ -10,7 +10,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  schoolId: string;
+  schoolId?: string;
   role: UserRole;
   deviceId: string;
   refreshToken?: string;
@@ -19,8 +19,11 @@ export interface User {
 export interface School {
   id: string;
   name: string;
+  schoolId: string;
   division: string;
-  district: string;
+  district?: string;
+  address?: string;
+  isActive: boolean;
 }
 
 export interface SchoolYear {

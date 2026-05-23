@@ -25,7 +25,7 @@ export const studentController = {
     try {
       const student = await studentService.getByLRN(
         req.params.lrn as string,
-        req.user!.schoolId,
+        req.user!.schoolId ?? '',
       );
       if (!student) {
         error(res, 'Student not found', 404);

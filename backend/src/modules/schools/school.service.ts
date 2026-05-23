@@ -2,7 +2,62 @@ import mongoose from 'mongoose';
 import { School } from '../../database/models/School.model';
 import { SchoolYear } from '../../database/models/SchoolYear.model';
 
+function mapSchool(s: InstanceType<typeof School> & { _id: unknown }) {
+  return {
+    id: (s._id as mongoose.Types.ObjectId).toString(),
+    name: s.name,
+    schoolId: s.schoolId,
+    division: s.division,
+    district: s.district ?? '',
+    address: s.address ?? '',
+    isActive: s.isActive,
+  };
+}
+
 export const schoolService = {
+  async listAll() {
+    const schools = await School.find({}).sort({ name: 1 }).lean();
+    return schools.map((s) => ({
+      id: (s._id as mongoose.Types.ObjectId).toString(),
+      name: s.name,
+      schoolId: s.schoolId,
+      division: s.division,
+      district: s.district ?? '',
+      address: s.address ?? '',
+      isActive: s.isActive,
+    }));
+  },
+
+  async createSchool(data: {
+    name: string;
+    schoolId: string;
+    division: string;
+    district?: string;
+    address?: string;
+  }) {
+    const existing = await School.findOne({ schoolId: data.schoolId });
+    if (existing) {
+      throw Object.assign(
+        new Error(`School with DepEd ID "${data.schoolId}" already exists`),
+        { statusCode: 409 },
+      );
+    }
+    const school = await School.create(data);
+    return mapSchool(school);
+  },
+
+  async updateSchool(
+    id: string,
+    data: Partial<{ name: string; schoolId: string; division: string; district: string; address: string }>,
+  ) {
+    const school = await School.findByIdAndUpdate(id, { $set: data }, { new: true });
+    if (!school) {
+      throw Object.assign(new Error('School not found'), { statusCode: 404 });
+    }
+    return mapSchool(school);
+  },
+
+
   async getYears(schoolObjectId: string) {
     const years = await SchoolYear.find({ schoolId: schoolObjectId })
       .sort({ startDate: -1 })

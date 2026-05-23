@@ -21,6 +21,7 @@ const PageSchedules      = lazy(() => import('../pages/Schedules').then(m => ({ 
 const PageGradebook      = lazy(() => import('../pages/Gradebook').then(m => ({ default: m.PageGradebook }))) as unknown as RouteComponent;
 const PageReports        = lazy(() => import('../pages/Reports').then(m => ({ default: m.PageReports })));
 const PageAdmin          = lazy(() => import('../pages/Admin').then(m => ({ default: m.PageAdmin }))) as unknown as RouteComponent;
+const PageOwner          = lazy(() => import('../pages/OwnerDashboard').then(m => ({ default: m.PageOwnerDashboard }))) as unknown as RouteComponent;
 const PageSync           = lazy(() => import('../pages/Sync').then(m => ({ default: m.PageSync }))) as unknown as RouteComponent;
 const PageSettings       = lazy(() => import('../pages/Settings').then(m => ({ default: m.PageSettings })));
 
@@ -150,6 +151,18 @@ export const adminRoute = createRoute({
   component: PageAdmin,
 });
 
+export const ownerRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/owner',
+  component: PageOwner,
+  beforeLoad: () => {
+    const { user } = useAuthStore.getState();
+    if (user?.role !== 'super_admin') {
+      throw redirect({ to: '/app/dashboard' });
+    }
+  },
+});
+
 export const syncRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/sync',
@@ -183,6 +196,7 @@ const routeTree = rootRoute.addChildren([
     gradebookRoute,
     reportsRoute,
     adminRoute,
+    ownerRoute,
     syncRoute,
     settingsRoute,
   ]),

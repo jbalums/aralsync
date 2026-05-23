@@ -42,7 +42,7 @@ export interface JwtPayload {
   userId: string;
   email: string;
   role: Role;
-  schoolId: string;
+  schoolId?: string;
   deviceId?: string;
 }
 
@@ -71,7 +71,7 @@ export interface IUser {
   fullName: string;
   employeeNumber: string;
   position: string;
-  schoolId: string;
+  schoolId?: string;
   role: Role;
   deviceIds: string[];
   refreshTokens: string[];

@@ -1,5 +1,5 @@
 import { http } from '../../services/http';
-import type { SchoolYear } from '../../shared/types';
+import type { School, SchoolYear } from '../../shared/types';
 
 export interface CreateSchoolYearPayload {
   label: string;
@@ -7,7 +7,30 @@ export interface CreateSchoolYearPayload {
   endDate: string;
 }
 
+export interface CreateSchoolPayload {
+  name: string;
+  schoolId: string;
+  division: string;
+  district?: string;
+  address?: string;
+}
+
 export const schoolsService = {
+  async listAll(): Promise<School[]> {
+    const res = await http.get<{ data: School[] }>('/schools');
+    return res.data.data;
+  },
+
+  async createSchool(payload: CreateSchoolPayload): Promise<School> {
+    const res = await http.post<{ data: School }>('/schools', payload);
+    return res.data.data;
+  },
+
+  async updateSchool(id: string, payload: Partial<CreateSchoolPayload>): Promise<School> {
+    const res = await http.put<{ data: School }>(`/schools/${id}`, payload);
+    return res.data.data;
+  },
+
   async getYears(schoolId: string): Promise<SchoolYear[]> {
     const res = await http.get<{ data: SchoolYear[] }>(`/schools/${schoolId}/years`);
     return res.data.data;

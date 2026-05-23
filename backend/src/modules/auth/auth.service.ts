@@ -12,7 +12,7 @@ function issueTokens(
   userId: string,
   email: string,
   role: Role,
-  schoolId: string,
+  schoolId: string | undefined,
   deviceId: string,
 ): { accessToken: string; refreshToken: string } {
   const payload: JwtPayload = { userId, email, role, schoolId, deviceId };
@@ -30,7 +30,7 @@ function toClientUser(user: IUserDocument, deviceId: string) {
     id: (user._id as mongoose.Types.ObjectId).toString(),
     email: user.email,
     name: user.fullName,
-    schoolId: user.schoolId.toString(),
+    schoolId: user.schoolId?.toString() ?? '',
     role: user.role,
     deviceId,
   };
@@ -104,7 +104,7 @@ export const authService = {
       (user._id as mongoose.Types.ObjectId).toString(),
       user.email,
       user.role,
-      user.schoolId.toString(),
+      user.schoolId?.toString(),
       data.deviceId,
     );
 

@@ -7,7 +7,7 @@ export interface IUserDocument extends Document {
   fullName: string;
   employeeNumber: string;
   position: string;
-  schoolId: mongoose.Types.ObjectId;
+  schoolId?: mongoose.Types.ObjectId;
   role: Role;
   deviceIds: string[];
   refreshTokens: string[];
@@ -21,7 +21,7 @@ const userSchema = new Schema<IUserDocument>(
     fullName: { type: String, required: true, trim: true },
     employeeNumber: { type: String, trim: true, default: '' },
     position: { type: String, trim: true, default: '' },
-    schoolId: { type: Schema.Types.ObjectId, ref: 'School', required: true },
+    schoolId: { type: Schema.Types.ObjectId, ref: 'School', required: false },
     role: { type: String, enum: Object.values(Role), required: true },
     deviceIds: [{ type: String }],
     refreshTokens: [{ type: String }],

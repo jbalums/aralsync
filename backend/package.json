@@ -8,7 +8,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "lint": "tsc --noEmit",
-    "seed": "ts-node-dev --transpile-only --no-notify src/database/seed.ts"
+    "seed": "ts-node-dev --transpile-only --no-notify src/database/seed.ts",
+    "seed:owner": "ts-node-dev --transpile-only --no-notify src/database/seed-owner.ts"
   },
   "keywords": [],
   "author": "",

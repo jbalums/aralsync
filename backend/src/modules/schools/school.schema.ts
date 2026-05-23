@@ -12,3 +12,13 @@ export const yearIdParamSchema = z.object({
   id: z.string().min(1),
   yearId: z.string().min(1),
 });
+
+export const createSchoolSchema = z.object({
+  name: z.string().min(2, 'School name must be at least 2 characters'),
+  schoolId: z.string().min(1, 'DepEd school ID is required'),
+  division: z.string().min(2, 'Division is required'),
+  district: z.string().optional(),
+  address: z.string().optional(),
+});
+
+export const updateSchoolSchema = createSchoolSchema.partial();

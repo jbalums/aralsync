@@ -3,6 +3,38 @@ import { schoolService } from './school.service';
 import { success } from '../../shared/utils/response';
 
 export const schoolController = {
+  async listAll(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const schools = await schoolService.listAll();
+      success(res, schools);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async create(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const school = await schoolService.createSchool(
+        req.body as { name: string; schoolId: string; division: string; district?: string; address?: string },
+      );
+      success(res, school, 201);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async update(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const school = await schoolService.updateSchool(
+        req.params.id as string,
+        req.body as Partial<{ name: string; schoolId: string; division: string; district: string; address: string }>,
+      );
+      success(res, school);
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async getYears(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const years = await schoolService.getYears(req.params.id as string);

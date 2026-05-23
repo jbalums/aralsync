@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Icon, Logo, Avatar, Dropdown, ConnPill } from "../components";
 import { TEACHER, NOTIFICATIONS } from "../data/mockData";
 import { useSyncStore } from "../modules/sync/syncStore";
+import { useAuthStore } from "../modules/auth/authStore";
 
 // ─── APP SHELL: SIDEBAR + TOPBAR + MOBILE NAV ────────────
 
@@ -54,6 +55,7 @@ export const MOBILE_TABS = [
 ];
 
 export function Sidebar({ route, setRoute, online, onClose = () => {} }) {
+	const user = useAuthStore((s) => s.user);
 	const queueCount = useSyncStore((s) => s.queueCount);
 	const lastSyncAt = useSyncStore((s) => s.lastSyncAt);
 	const lastSyncLabel = lastSyncAt
@@ -135,6 +137,31 @@ export function Sidebar({ route, setRoute, online, onClose = () => {} }) {
 							</div>
 						</div>
 					),
+				)}
+
+				{user?.role === 'super_admin' && (
+					<div className="mb-4">
+						<div className="px-2 mb-1.5 text-[10px] font-semibold tracking-[0.12em] uppercase text-muted-light">
+							Owner
+						</div>
+						<div className="flex flex-col gap-0.5">
+							{(() => {
+								const isActive = route === 'owner';
+								return (
+									<button
+										onClick={() => setRoute('owner')}
+										className={`group flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13.5px] font-medium tx text-left relative ${isActive ? "bg-primary-light/70 text-primary-dark" : "text-navy/80 hover:bg-slate-50"}`}
+									>
+										{isActive && (
+											<span className="absolute left-0 top-1.5 bottom-1.5 w-0.75 rounded-r bg-primary"></span>
+										)}
+										<Icon name="globe-2" size={16} className={isActive ? "text-primary" : "text-muted"} />
+										<span className="flex-1">Owner Dashboard</span>
+									</button>
+								);
+							})()}
+						</div>
+					</div>
 				)}
 			</div>
 
@@ -235,6 +262,7 @@ export function TopBar({
 		},
 		schedules: { title: "Schedules", crumb: ["Home", "Schedules"] },
 		admin: { title: "Admin Console", crumb: ["Home", "Admin", "Console"] },
+		owner: { title: "Owner Dashboard", crumb: ["Home", "Owner", "Dashboard"] },
 	};
 	const t = titles[route] || { title: "AralSync", crumb: ["Home"] };
 	const [notifsOpen, setNotifsOpen] = useState(false);
