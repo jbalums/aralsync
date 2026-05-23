@@ -176,7 +176,7 @@ export function PageAttendance() {
         title:   'Attendance saved',
         message: isOnline
           ? `${inputs.length} records uploaded to cloud.`
-          : `${inputs.length} records saved locally — will sync when online.`,
+          : `${inputs.length} records saved locally - will sync when online.`,
       });
     } finally {
       setSaving(false);
@@ -262,7 +262,7 @@ export function PageAttendance() {
                 className="dot"
                 style={{ background: isOnline ? '#10B981' : '#F59E0B' }}
               />
-              {isOnline ? 'Online — auto-sync on save' : 'Offline — saving locally'}
+              {isOnline ? 'Online - auto-sync on save' : 'Offline - saving locally'}
             </span>
 
             <div className="flex items-center gap-2">
@@ -329,7 +329,7 @@ export function PageAttendance() {
         {tally.unmarked > 0 && (
           <div className="mt-3 flex items-center justify-between gap-2 bg-primary-light/40 border border-primary-light rounded-md px-3 py-2">
             <div className="text-[12.5px] text-primary-dark">
-              <span className="font-semibold">{tally.unmarked} students unmarked</span> — common shortcut:
+              <span className="font-semibold">{tally.unmarked} students unmarked</span> - common shortcut:
             </div>
             <div className="flex items-center gap-2">
               <Btn size="sm" variant="soft" icon="check" onClick={bulkMarkRemainingPresent}>
@@ -509,7 +509,7 @@ export function PageAttendance() {
             <ul className="space-y-2 text-[12.5px]">
               {[
                 { icon: 'hard-drive',   text: 'Saved instantly to your device' },
-                { icon: 'refresh-cw',   text: 'Queued for sync — even mid-class' },
+                { icon: 'refresh-cw',   text: 'Queued for sync - even mid-class' },
                 { icon: 'cloud-upload', text: 'Uploads when connection returns' },
               ].map(({ icon, text }) => (
                 <li key={icon} className="flex items-start gap-2">
@@ -563,7 +563,7 @@ export function PageAttendance() {
                     </td>
                     <td className="px-3 py-2 font-mono text-muted">{s.lrn}</td>
                     <td className="px-3 py-2 text-right">
-                      {m ? <Badge status={m} /> : <span className="text-muted">—</span>}
+                      {m ? <Badge status={m} /> : <span className="text-muted">-</span>}
                     </td>
                   </tr>
                 );

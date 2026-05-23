@@ -352,10 +352,10 @@ export function PageSchedules() {
           )}
           {classLoads.map(c => (
             <li key={c.id} className="py-2.5 flex items-center gap-3">
-              <SubjectChip subject={c.subject?.name ?? c.subjectName ?? '—'}/>
+              <SubjectChip subject={c.subject?.name ?? c.subjectName ?? '-'}/>
               <div className="flex-1">
                 <div className="text-[13px] font-semibold text-navy">
-                  {c.section?.name ?? c.sectionName ?? '—'}
+                  {c.section?.name ?? c.sectionName ?? '-'}
                 </div>
                 <div className="text-[11px] text-muted">{c.scheduleTime} · {c.roomNumber}</div>
               </div>
@@ -580,7 +580,7 @@ function EventEditor({
         {form.type === 'class' && !conflictMsg && (
           <div className="rounded-md bg-primary-light/40 border border-primary-light p-3 text-[12px] text-primary-dark flex items-center gap-2">
             <Icon name="info" size={14}/>
-            This block links to <span className="font-semibold">{form.title || '—'}</span> in your class loads.
+            This block links to <span className="font-semibold">{form.title || '-'}</span> in your class loads.
           </div>
         )}
       </div>

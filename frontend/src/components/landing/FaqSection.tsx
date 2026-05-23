@@ -13,7 +13,7 @@ export function FaqSection() {
             <span className="font-semibold text-navy text-[15px]">Do I need internet to use AralSync?</span>
             <ChevronDown className="w-5 h-5 text-muted group-open:rotate-180 tx" strokeWidth={1.75} />
           </summary>
-          <p className="mt-3 text-[13.5px] text-muted leading-relaxed">No. The app works fully offline. Every action saves to your device. Sync happens automatically when WiFi or mobile data is available — or via LAN peers when other teachers' devices are nearby.</p>
+          <p className="mt-3 text-[13.5px] text-muted leading-relaxed">No. The app works fully offline. Every action saves to your device. Sync happens automatically when WiFi or mobile data is available - or via LAN peers when other teachers' devices are nearby.</p>
         </details>
         <details className="group rounded-lg border border-line bg-white p-4" data-reveal>
           <summary className="flex items-center justify-between cursor-pointer list-none">

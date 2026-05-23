@@ -263,7 +263,7 @@ function AddStudentModal({ open, onClose, classLoads, onSuccess }) {
                 setLrnTouched(true);
                 const val = e.target.value;
                 if (val.length === 12 && !validateLRN(val)) {
-                  setError('lrn', { message: 'Invalid LRN — check digit does not match' });
+                  setError('lrn', { message: 'Invalid LRN - check digit does not match' });
                 } else {
                   clearErrors('lrn');
                 }
@@ -275,7 +275,7 @@ function AddStudentModal({ open, onClose, classLoads, onSuccess }) {
           {errors.lrn && <span className="text-[12px] text-red-500 mt-1 block">{errors.lrn.message}</span>}
           {dupStudent && !errors.lrn && (
             <span className="text-[12px] text-amber-600 mt-1 block">
-              Warning: LRN already exists — {dupStudent.lastName}, {dupStudent.firstName}
+              Warning: LRN already exists - {dupStudent.lastName}, {dupStudent.firstName}
             </span>
           )}
         </div>
@@ -407,7 +407,7 @@ function ImportCSVModal({ open, onClose, classLoads, onSuccess }) {
                 {result.failed.map((f, i) => (
                   <div key={i} className="px-3 py-2 border-t border-line text-[12px]">
                     <span className="font-mono text-navy">{f.lrn}</span>
-                    <span className="text-muted ml-2">— {f.reason}</span>
+                    <span className="text-muted ml-2">- {f.reason}</span>
                   </div>
                 ))}
               </div>

@@ -18,7 +18,7 @@ export function HeroSection() {
             Teach more.<br /><span className="gradient-text">Sync seamlessly.</span>
           </h1>
           <p className="mt-5 text-[16.5px] text-muted leading-relaxed max-w-xl">
-            AralSync is the offline-first attendance and academic record system for DepEd classrooms. Save records to your device instantly — sync to the cloud only when the WiFi feels generous.
+            AralSync is the offline-first attendance and academic record system for DepEd classrooms. Save records to your device instantly - sync to the cloud only when the WiFi feels generous.
           </p>
           <div className="mt-7 flex items-center gap-3 flex-wrap">
             <a href="/signin?mode=register" className="inline-flex items-center gap-2 h-12 px-5 rounded-md bg-primary text-white font-semibold text-[14px] hover:bg-primary-dark press tx">
@@ -44,7 +44,7 @@ export function HeroSection() {
               <span className="w-2.5 h-2.5 rounded-full bg-rose-400/70"></span>
               <span className="w-2.5 h-2.5 rounded-full bg-amber-400/70"></span>
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/70"></span>
-              <span className="ml-3 text-[11px] font-mono text-muted-light">aralsync.com / attendance · Grade 7 — Rizal</span>
+              <span className="ml-3 text-[11px] font-mono text-muted-light">aralsync.com / attendance · Grade 7 - Rizal</span>
               <span className="ml-auto inline-flex items-center gap-1.5 text-[11px] text-amber-700 font-semibold pr-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 pulse-dot"></span>Offline · saving locally
               </span>

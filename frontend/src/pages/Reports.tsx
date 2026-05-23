@@ -41,7 +41,7 @@ function classifyLabel(c: string | null): string {
   if (c === 'withHighestHonors') return 'With Highest Honors';
   if (c === 'withHighHonors')    return 'With High Honors';
   if (c === 'withHonors')        return 'With Honors';
-  return '—';
+  return '-';
 }
 
 // ── main ──────────────────────────────────────────────────────────────────────
@@ -61,7 +61,7 @@ export function PageReports() {
   // Students for the selected class load (for SF9/SF10 selector)
   const { data: students = [] } = useClassLoadStudents(selectedClassLoadId);
 
-  // School years (for SF9/SF10 selector) — derived from class loads
+  // School years (for SF9/SF10 selector) - derived from class loads
   const schoolYearOptions = useMemo(() => {
     const seen = new Map<string, string>();
     for (const cl of classLoads) {
@@ -359,7 +359,7 @@ export function PageReports() {
         <Card className="overflow-hidden">
           <div className="px-4 py-3 border-b border-line flex items-center justify-between">
             <h3 className="text-[14px] font-semibold text-navy">
-              Class report · {selectedLoad?.subject?.name ?? '—'} · {selectedQuarter}
+              Class report · {selectedLoad?.subject?.name ?? '-'} · {selectedQuarter}
             </h3>
             <span className="text-[11px] text-muted">{classReport.rows.length} students</span>
           </div>

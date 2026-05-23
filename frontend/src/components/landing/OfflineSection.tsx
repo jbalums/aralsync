@@ -8,7 +8,7 @@ export function OfflineSection() {
         <div data-reveal>
           <span className="text-[12px] font-semibold tracking-[0.16em] uppercase text-emerald-300">Offline-first architecture</span>
           <h2 className="text-[32px] sm:text-[40px] font-bold tracking-tight mt-3">Your records don't depend on a router that doesn't work.</h2>
-          <p className="mt-5 text-[15px] text-white/70 leading-relaxed">Every action saves to your device first. AralSync then quietly negotiates with cloud, LAN peers, or USB backup — whichever is available, whenever it's available.</p>
+          <p className="mt-5 text-[15px] text-white/70 leading-relaxed">Every action saves to your device first. AralSync then quietly negotiates with cloud, LAN peers, or USB backup - whichever is available, whenever it's available.</p>
           <div className="mt-7 space-y-3">
             <div className="flex items-start gap-3">
               <span className="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-300 inline-flex items-center justify-center shrink-0 mt-0.5">
@@ -16,7 +16,7 @@ export function OfflineSection() {
               </span>
               <div>
                 <div className="font-semibold">Local-first writes</div>
-                <div className="text-[13px] text-white/60">Attendance, grades, notes — committed to device storage in {'<'}5ms.</div>
+                <div className="text-[13px] text-white/60">Attendance, grades, notes - committed to device storage in {'<'}5ms.</div>
               </div>
             </div>
             <div className="flex items-start gap-3">

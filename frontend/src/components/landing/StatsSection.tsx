@@ -12,7 +12,7 @@ export function StatsSection() {
         </div>
         <div className="rounded-lg border border-line p-5 bg-white" data-reveal>
           <div className="text-[34px] font-bold font-mono text-navy leading-none">100<span className="text-primary">%</span></div>
-          <div className="text-[12.5px] text-muted mt-2">DepEd grading compliant — WW · PT · QA weights</div>
+          <div className="text-[12.5px] text-muted mt-2">DepEd grading compliant - WW · PT · QA weights</div>
         </div>
         <div className="rounded-lg border border-line p-5 bg-white" data-reveal>
           <div className="text-[34px] font-bold font-mono text-navy leading-none">3<span className="text-primary"> SFs</span></div>

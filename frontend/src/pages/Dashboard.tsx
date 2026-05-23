@@ -226,7 +226,7 @@ export function PageDashboard({ online, pending, setRoute, setSelectedClass, ope
 
         {/* Class performance sparklines */}
         <Card className="p-5 lg:col-span-3">
-          <SectionHeader title="Class performance — last 4 weeks"
+          <SectionHeader title="Class performance - last 4 weeks"
             subtitle="Attendance trend per class"
             right={
               <div className="flex items-center gap-3 text-[11px] text-muted">

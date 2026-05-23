@@ -642,14 +642,14 @@ function ClassOverviewTab({ cls }: { cls: ClassLoadListItem }) {
 				<StatCard
 					icon="check-circle"
 					label="Avg attendance"
-					value="—"
+					value="-"
 					color="accent"
 					sub="Not yet computed"
 				/>
 				<StatCard
 					icon="graduation-cap"
 					label="Avg grade"
-					value="—"
+					value="-"
 					color="blue"
 					sub={`${cls.quarter} cumulative`}
 				/>

@@ -230,7 +230,7 @@ export function PageSettings() {
               <div className="flex-1">
                 <div className="text-[13px] text-muted">v1.0.0 · Beta</div>
                 <p className="text-[13px] text-navy mt-2 max-w-md leading-relaxed">
-                  Built for Philippine public school teachers. Designed to keep classroom records flowing — even on patchy connections — and to align with the DepEd grading framework out of the box.
+                  Built for Philippine public school teachers. Designed to keep classroom records flowing - even on patchy connections - and to align with the DepEd grading framework out of the box.
                 </p>
                 <div className="mt-3 flex items-center gap-2">
                   <Btn variant="secondary" size="sm" icon="git-commit">View changelog</Btn>

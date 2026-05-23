@@ -201,7 +201,7 @@ export function PageGradebook() {
     });
     setAddColOpen(false);
     setComponent(addColForm.component);
-    toast.push({ type: 'success', message: `Column ${addColForm.columnLabel} added — enter scores to save` });
+    toast.push({ type: 'success', message: `Column ${addColForm.columnLabel} added - enter scores to save` });
   };
 
   const handleComputeGrades = async () => {
@@ -270,7 +270,7 @@ export function PageGradebook() {
               </div>
             )}
             <h2 className="text-[20px] font-semibold tracking-tight text-navy mt-1">
-              {classLoad?.subject.name ?? '—'} gradebook
+              {classLoad?.subject.name ?? '-'} gradebook
             </h2>
             {classLoad && (
               <div className="text-[12px] text-muted mt-0.5">
@@ -394,7 +394,7 @@ export function PageGradebook() {
                   ))}
                   {!compCols.length && (
                     <th className="px-4 py-3 text-[12px] text-muted font-normal text-center">
-                      No columns yet — click "Add column"
+                      No columns yet - click "Add column"
                     </th>
                   )}
                   <th className="text-center font-semibold px-3 py-2.5 min-w-20">Avg</th>
@@ -499,7 +499,7 @@ export function PageGradebook() {
                             {grade.transmutedGrade}
                           </span>
                         ) : (
-                          <span className="text-muted-light">—</span>
+                          <span className="text-muted-light">-</span>
                         )}
                       </td>
                     </tr>
@@ -536,7 +536,7 @@ export function PageGradebook() {
       <div className="text-[12px] text-muted flex items-center gap-2 px-1">
         <Icon name="info" size={13} />
         Quarterly Grade = WW({Math.round(weights.ww * 100)}%) + PT({Math.round(weights.pt * 100)}%) + QA({Math.round(weights.qa * 100)}%), transmuted per DepEd table. Passing ≥ 75.
-        {isFinalized && <span className="ml-2 text-amber-700 font-semibold flex items-center gap-1"><Icon name="lock" size={12} /> Quarter finalized — cells locked</span>}
+        {isFinalized && <span className="ml-2 text-amber-700 font-semibold flex items-center gap-1"><Icon name="lock" size={12} /> Quarter finalized - cells locked</span>}
       </div>
 
       {/* ── Add column modal ── */}
@@ -673,7 +673,7 @@ export function PageGradebook() {
                         <td className="px-3 py-2 text-[11px] text-muted">
                           {row.classification === 'withHighestHonors' ? '🏆 With Highest Honors' :
                            row.classification === 'withHighHonors'    ? '⭐ With High Honors'    :
-                           row.classification === 'withHonors'        ? '✦ With Honors'          : '—'}
+                           row.classification === 'withHonors'        ? '✦ With Honors'          : '-'}
                         </td>
                       </tr>
                     );

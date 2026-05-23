@@ -7,7 +7,7 @@ export function PreviewSection() {
         <div className="text-center max-w-2xl mx-auto" data-reveal>
           <span className="text-[12px] font-semibold tracking-[0.16em] uppercase text-primary">See it in action</span>
           <h2 className="text-[32px] sm:text-[40px] font-bold tracking-tight text-navy mt-2">Designed to disappear behind your teaching.</h2>
-          <p className="mt-4 text-[15.5px] text-muted">Open the demo and click through every page — no sign-up required.</p>
+          <p className="mt-4 text-[15.5px] text-muted">Open the demo and click through every page - no sign-up required.</p>
         </div>
 
         <div className="mt-10 relative" data-reveal>

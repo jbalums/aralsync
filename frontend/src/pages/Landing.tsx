@@ -18,7 +18,7 @@ export default function Landing() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = 'AralSync — Teach more. Sync seamlessly.';
+    document.title = 'AralSync - Teach more. Sync seamlessly.';
 
     const obs = new IntersectionObserver(
       (entries) => entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add('in'); }),

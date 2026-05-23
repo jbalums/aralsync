@@ -148,7 +148,7 @@ export function PageSync() {
             title="Pending queue"
             subtitle={queueCount
               ? `${queueCount} record${queueCount > 1 ? 's' : ''} ready to upload`
-              : 'Nothing pending — you are all caught up'}
+              : 'Nothing pending - you are all caught up'}
             right={queueCount
               ? <Btn size="sm" variant="primary" icon={syncing ? 'loader-2' : 'cloud-upload'} onClick={doSync} disabled={!isOnline || syncing}>{syncing ? 'Syncing…' : 'Sync now'}</Btn>
               : null}
@@ -218,7 +218,7 @@ export function PageSync() {
               </span>
               <div className="flex-1 min-w-0">
                 <div className="text-[13px] font-semibold text-emerald-900">{lanPeers} peer{lanPeers !== 1 ? 's' : ''} connected</div>
-                <div className="text-[11px] text-emerald-700">LAN sync active — changes propagate instantly</div>
+                <div className="text-[11px] text-emerald-700">LAN sync active - changes propagate instantly</div>
               </div>
               <span className="dot pulse-dot flex-shrink-0" style={{ background: '#10B981', width: 9, height: 9 }}/>
             </div>

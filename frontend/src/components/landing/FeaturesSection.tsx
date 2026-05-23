@@ -32,7 +32,7 @@ export function FeaturesSection() {
             <WifiOff className="w-5 h-5" strokeWidth={1.75} />
           </span>
           <h3 className="mt-4 text-[18px] font-semibold tracking-tight text-navy">Offline by default</h3>
-          <p className="mt-1.5 text-[13.5px] text-muted leading-relaxed">Records save instantly to your device — sync queues quietly until your school's WiFi co-operates. No data loss, ever.</p>
+          <p className="mt-1.5 text-[13.5px] text-muted leading-relaxed">Records save instantly to your device - sync queues quietly until your school's WiFi co-operates. No data loss, ever.</p>
         </div>
 
         <div className="rounded-xl border border-line p-6 bg-white tx hover:-translate-y-0.5 hover:soft-shadow" data-reveal>
@@ -40,7 +40,7 @@ export function FeaturesSection() {
             <FileText className="w-5 h-5" strokeWidth={1.75} />
           </span>
           <h3 className="mt-4 text-[18px] font-semibold tracking-tight text-navy">SF2, SF9, SF10 ready</h3>
-          <p className="mt-1.5 text-[13.5px] text-muted leading-relaxed">Generate the forms your Division actually asks for. Print, PDF, or Excel — your roster, your honor roll, in seconds.</p>
+          <p className="mt-1.5 text-[13.5px] text-muted leading-relaxed">Generate the forms your Division actually asks for. Print, PDF, or Excel - your roster, your honor roll, in seconds.</p>
         </div>
 
         <div className="rounded-xl border border-line p-6 bg-white tx hover:-translate-y-0.5 hover:soft-shadow" data-reveal>
@@ -48,7 +48,7 @@ export function FeaturesSection() {
             <RefreshCw className="w-5 h-5" strokeWidth={1.75} />
           </span>
           <h3 className="mt-4 text-[18px] font-semibold tracking-tight text-navy">LAN peer sync</h3>
-          <p className="mt-1.5 text-[13.5px] text-muted leading-relaxed">Co-advisers can sync between devices on the same WiFi — even when the internet's out at school.</p>
+          <p className="mt-1.5 text-[13.5px] text-muted leading-relaxed">Co-advisers can sync between devices on the same WiFi - even when the internet's out at school.</p>
         </div>
 
         <div className="rounded-xl border border-line p-6 bg-white tx hover:-translate-y-0.5 hover:soft-shadow" data-reveal>
