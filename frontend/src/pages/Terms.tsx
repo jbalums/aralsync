@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { LegalLayout, Sec, Sub, P, Ul, Ol, Note, Placeholder } from '../components/legal/LegalLayout';
+import { LegalLayout, Sec, Sub, P, Ul, Ol, Note } from '../components/legal/LegalLayout';
 
 export default function Terms() {
   useEffect(() => { document.title = 'Terms of Service — AralSync'; }, []);
@@ -14,7 +14,7 @@ export default function Terms() {
       <P>
         These Terms of Service ("Terms") govern your access to and use of AralSync, a Progressive Web App
         (PWA) for classroom attendance and academic records management, developed and operated by{' '}
-        <strong>Joel Baluma</strong> doing business as AralSync ("AralSync," "we," "us," or "our").
+        <strong>ARALSYNC SOFTWARE DEVELOPMENT SERVICES, a business registered with the Department of Trade and Industry of the Republic of the Philippines under DTI Registration No. 8212747</strong> ("AralSync," "we," "us," or "our").
       </P>
       <P>
         Please read these Terms carefully before creating an account. By registering for or using AralSync,
@@ -145,7 +145,7 @@ export default function Terms() {
           <Ol>
             <li>Change your password immediately</li>
             <li>Review and revoke any unauthorized paired devices in Settings → Devices</li>
-            <li>Notify AralSync at <strong>jbalums@gmail.com</strong> with the subject line "Unauthorized
+            <li>Notify AralSync at <strong>privacy@aralsync.com</strong> with the subject line "Unauthorized
               Access"</li>
             <li>Report the incident to your school administration if student data may have been accessed</li>
           </Ol>
@@ -250,8 +250,7 @@ export default function Terms() {
         <Sub title="6.1 AralSync Owns the Platform">
           <P>
             The AralSync application, including its design, user interface, branding, source code, algorithms,
-            and all associated intellectual property, is owned by <strong>Joel Baluma</strong> doing business
-            as AralSync, protected under Philippine intellectual property laws including{' '}
+            and all associated intellectual property, is owned by <strong>ARALSYNC SOFTWARE DEVELOPMENT SERVICES, a business registered with the Department of Trade and Industry of the Republic of the Philippines under DTI Registration No. 8212747</strong>, protected under Philippine intellectual property laws including{' '}
             <strong>Republic Act No. 8293</strong> (Intellectual Property Code of the Philippines).
           </P>
         </Sub>
@@ -505,7 +504,7 @@ export default function Terms() {
           <P>
             Before pursuing formal legal remedies, both parties agree to attempt resolution of any dispute
             through <strong>good-faith negotiation</strong>. To initiate this process, contact us at{' '}
-            <strong>jbalums@gmail.com</strong> with the subject line "Dispute Resolution Request." We commit
+            <strong>privacy@aralsync.com</strong> with the subject line "Dispute Resolution Request." We commit
             to responding within <strong>10 business days</strong> and engaging in good-faith discussions for
             up to <strong>30 days</strong>.
           </P>
@@ -513,8 +512,7 @@ export default function Terms() {
         <Sub title="12.3 Formal Dispute Resolution">
           <P>
             If good-faith negotiation fails to resolve the dispute within 30 days, either party may pursue
-            legal remedies through the appropriate courts of{' '}
-            <Placeholder>[YOUR CITY]</Placeholder>, Philippines. Both parties consent to the exclusive
+            legal remedies through the appropriate courts of Tagbilaran City, Bohol. Both parties consent to the exclusive
             jurisdiction of these courts for any disputes arising under or related to these Terms.
           </P>
         </Sub>
@@ -525,10 +523,6 @@ export default function Terms() {
             to access the NPC is absolute under RA 10173.
           </P>
         </Sub>
-        <Note>
-          <strong>Note for administrator:</strong> Replace <Placeholder>[YOUR CITY]</Placeholder> above with
-          the city where AralSync is principally operated.
-        </Note>
       </Sec>
 
       <Sec num="13" title="Changes to Terms">
@@ -558,7 +552,7 @@ export default function Terms() {
         <Sub title="13.4 Version History">
           <P>
             A version history of these Terms is maintained and available upon request at{' '}
-            <strong>jbalums@gmail.com</strong>.
+            <strong>privacy@aralsync.com</strong>.
           </P>
         </Sub>
       </Sec>
@@ -566,7 +560,11 @@ export default function Terms() {
       <Sec num="14" title="Contact">
         <P>For questions, concerns, or feedback about these Terms of Service:</P>
         <Ul>
-          <li><strong>Support Email:</strong> jbalums@gmail.com</li>
+          <li><strong>ARALSYNC SOFTWARE DEVELOPMENT SERVICES</strong></li>
+          <li><strong>DTI Registration No.:</strong> 8212747</li>
+          <li><strong>Address:</strong> Tagbilaran City, Bohol, Philippines</li>
+          <li><strong>Email:</strong> privacy@aralsync.com</li>
+          <li><strong>Website:</strong> aralsync.com</li>
           <li><strong>Response Time:</strong> Within <strong>5 business days</strong> for general inquiries</li>
         </Ul>
         <P>
@@ -574,7 +572,7 @@ export default function Terms() {
           Officer contact information.
         </P>
         <P>
-          For urgent security incidents, email <strong>jbalums@gmail.com</strong> with the subject line
+          For urgent security incidents, email <strong>privacy@aralsync.com</strong> with the subject line
           "Security Incident" — we treat these with highest priority.
         </P>
       </Sec>

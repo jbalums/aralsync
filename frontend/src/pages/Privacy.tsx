@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { LegalLayout, Sec, Sub, P, Ul, Ol, LegalTable, Note, Placeholder } from '../components/legal/LegalLayout';
+import { LegalLayout, Sec, Sub, P, Ul, Ol, LegalTable } from '../components/legal/LegalLayout';
 
 export default function Privacy() {
   useEffect(() => { document.title = 'Privacy Policy — AralSync'; }, []);
@@ -21,8 +21,7 @@ export default function Privacy() {
           connection.
         </P>
         <P>
-          This Privacy Policy explains how AralSync, developed and operated by <strong>Joel Baluma</strong> doing
-          business as AralSync ("we," "us," or "AralSync"), collects, uses, stores, and protects personal
+          This Privacy Policy explains how AralSync, developed and operated by <strong>ARALSYNC SOFTWARE DEVELOPMENT SERVICES, a business registered with the Department of Trade and Industry of the Republic of the Philippines under DTI Registration No. 8212747</strong> ("we," "us," or "AralSync"), collects, uses, stores, and protects personal
           information in connection with the AralSync service.
         </P>
         <Sub title="Who This Policy Applies To">
@@ -44,7 +43,7 @@ export default function Privacy() {
           </P>
           <P>
             This distinction is explained in detail in Section 2 below. If you have questions about this policy,
-            please contact us at <strong>jbalums@gmail.com</strong>.
+            please contact us at <strong>privacy@aralsync.com</strong>.
           </P>
         </Sub>
       </Sec>
@@ -397,7 +396,7 @@ export default function Privacy() {
         <P>
           Under <strong>RA 10173, Section 16</strong>, every person whose personal information is processed
           has the following rights. To exercise any of these rights, contact us at{' '}
-          <strong>jbalums@gmail.com</strong> or use the in-app data request feature
+          <strong>privacy@aralsync.com</strong> or use the in-app data request feature
           (Settings → Privacy → Data Rights). We will respond within <strong>30 days</strong> of receiving
           a verified request.
         </P>
@@ -421,7 +420,7 @@ export default function Privacy() {
           </P>
           <P>
             <strong>How to exercise it:</strong> Log in to AralSync → Settings → Privacy → Request My Data,
-            or email <strong>jbalums@gmail.com</strong> with the subject line "Data Access Request." We will
+            or email <strong>privacy@aralsync.com</strong> with the subject line "Data Access Request." We will
             provide a complete, machine-readable export within <strong>30 days</strong>.
           </P>
         </Sub>
@@ -431,7 +430,7 @@ export default function Privacy() {
             information, including processing based on legitimate interests.
           </P>
           <P>
-            <strong>How to exercise it:</strong> Email <strong>jbalums@gmail.com</strong> with the subject
+            <strong>How to exercise it:</strong> Email <strong>privacy@aralsync.com</strong> with the subject
             line "Objection to Data Processing." We will assess your objection and respond within{' '}
             <strong>30 days</strong>. Note: objecting to core processing may require account deletion.
           </P>
@@ -444,7 +443,7 @@ export default function Privacy() {
           </P>
           <P>
             <strong>How to exercise it:</strong> For account deletion: Log in → Settings → Account → Delete
-            My Account. For specific record deletion: email <strong>jbalums@gmail.com</strong>. Cloud data
+            My Account. For specific record deletion: email <strong>privacy@aralsync.com</strong>. Cloud data
             is deleted within <strong>30 days</strong> of a verified request.
           </P>
         </Sub>
@@ -456,7 +455,7 @@ export default function Privacy() {
           <P>
             <strong>How to exercise it:</strong> Teacher account information can be corrected directly in the
             app (Settings → Profile → Edit). Student data can be corrected by teachers directly in the class
-            roster. For corrections that cannot be made in-app, email <strong>jbalums@gmail.com</strong>.
+            roster. For corrections that cannot be made in-app, email <strong>privacy@aralsync.com</strong>.
           </P>
         </Sub>
         <Sub title="f. Right to Data Portability">
@@ -478,7 +477,7 @@ export default function Privacy() {
             of your personal information.
           </P>
           <P>
-            <strong>How to exercise it:</strong> Contact us at <strong>jbalums@gmail.com</strong> to attempt
+            <strong>How to exercise it:</strong> Contact us at <strong>privacy@aralsync.com</strong> to attempt
             resolution first. If unresolved, you may file a complaint with the National Privacy Commission
             or pursue claims through the appropriate courts of the Philippines.
           </P>
@@ -589,7 +588,7 @@ export default function Privacy() {
         <Sub title="10.4 Reporting a Breach to AralSync">
           <P>
             If you suspect or discover a security vulnerability affecting AralSync, please report it
-            immediately to <strong>jbalums@gmail.com</strong> with the subject line "Security Incident
+            immediately to <strong>privacy@aralsync.com</strong> with the subject line "Security Incident
             Report." We treat all security reports as high priority.
           </P>
         </Sub>
@@ -607,7 +606,7 @@ export default function Privacy() {
           Student data is entered <strong>by teachers</strong> — students do not use AralSync directly.
           AralSync does not knowingly collect personal information directly from any person under 18 years of
           age. If you believe a minor has registered an account, please contact us immediately at{' '}
-          <strong>jbalums@gmail.com</strong>.
+          <strong>privacy@aralsync.com</strong>.
         </P>
       </Sec>
 
@@ -669,22 +668,20 @@ export default function Privacy() {
         <Sub title="13.4 Version History">
           <P>
             A version history of this Privacy Policy is maintained and available upon request at{' '}
-            <strong>jbalums@gmail.com</strong>.
+            <strong>privacy@aralsync.com</strong>.
           </P>
         </Sub>
       </Sec>
 
       <Sec num="14" title="Contact & Data Protection Officer">
         <Sub title="Data Protection Officer">
-          <P><strong>DPO Name:</strong> Joel Baluma</P>
-          <P><strong>DPO Email:</strong> jbalums@gmail.com</P>
-          <P>
-            <strong>Response Commitment:</strong> We will respond to all privacy-related inquiries within{' '}
-            <strong>15 business days</strong> of receipt.
-          </P>
-          <P>
-            <strong>Address:</strong> AralSync · <Placeholder>[YOUR CITY]</Placeholder>, Philippines
-          </P>
+          <P><strong>Data Protection Officer</strong></P>
+          <P>ARALSYNC SOFTWARE DEVELOPMENT SERVICES</P>
+          <P>DTI Registration No.: 8212747</P>
+          <P>Tagbilaran City, Bohol, Philippines</P>
+          <P>Email: privacy@aralsync.com</P>
+          <P>Website: aralsync.com</P>
+          <P>Response time: within 15 business days</P>
         </Sub>
         <Sub title="National Privacy Commission">
           <P>
@@ -704,10 +701,6 @@ export default function Privacy() {
             the courts of the Philippines.
           </P>
         </Sub>
-        <Note>
-          <strong>Note for administrator:</strong> Replace <Placeholder>[YOUR CITY]</Placeholder> above with
-          the city where AralSync is principally operated.
-        </Note>
       </Sec>
 
     </LegalLayout>

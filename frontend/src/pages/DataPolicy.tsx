@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { LegalLayout, Sec, Sub, P, Ul, Ol, LegalTable, Note, Placeholder } from '../components/legal/LegalLayout';
+import { LegalLayout, Sec, Sub, P, Ul, Ol, LegalTable } from '../components/legal/LegalLayout';
 
 export default function DataPolicy() {
   useEffect(() => { document.title = 'Data Processing Agreement — AralSync'; }, []);
@@ -18,7 +18,7 @@ export default function DataPolicy() {
         <li><strong>The Controller</strong> — the teacher, school, or educational institution that has accepted
           AralSync's Terms of Service and uses the AralSync platform ("Controller," "you," or "your
           institution"); and</li>
-        <li><strong>The Processor</strong> — <strong>Joel Baluma</strong> doing business as AralSync, developer
+        <li><strong>The Processor</strong> — <strong>ARALSYNC SOFTWARE DEVELOPMENT SERVICES, a business registered with the Department of Trade and Industry of the Republic of the Philippines under DTI Registration No. 8212747</strong>, developer
           and operator of the AralSync platform ("Processor," "AralSync," "we," or "us").</li>
       </Ul>
       <P>
@@ -81,7 +81,7 @@ export default function DataPolicy() {
         </Sub>
         <Sub title="Processor">
           <P>
-            AralSync (Joel Baluma), which processes Personal Data on behalf of the Controller. AralSync is
+            AralSync (ARALSYNC SOFTWARE DEVELOPMENT SERVICES), which processes Personal Data on behalf of the Controller. AralSync is
             the <strong>Personal Information Processor (PIP)</strong> as defined under RA 10173.
           </P>
         </Sub>
@@ -345,7 +345,7 @@ export default function DataPolicy() {
             The Processor maintains a documented <strong>breach response procedure</strong> covering:
             detection, containment, assessment, notification, and post-incident review. A designated person
             is responsible for security incident management. Contact for reporting incidents:{' '}
-            <strong>jbalums@gmail.com</strong>.
+            <strong>privacy@aralsync.com</strong>.
           </P>
         </Sub>
         <Sub title="6.5 Backup and Recovery">
@@ -649,13 +649,9 @@ export default function DataPolicy() {
         <Sub title="13.3 Court Jurisdiction">
           <P>
             For contractual disputes under this Agreement, both parties consent to the exclusive jurisdiction
-            of the appropriate courts in <Placeholder>[YOUR CITY]</Placeholder>, Philippines.
+            of the appropriate courts in Tagbilaran City, Bohol, Philippines.
           </P>
         </Sub>
-        <Note>
-          <strong>Note for administrator:</strong> Replace <Placeholder>[YOUR CITY]</Placeholder> above with
-          the city where AralSync is principally operated.
-        </Note>
       </Sec>
 
       <Sec num="14" title="Signatures / Acceptance">
@@ -682,14 +678,14 @@ export default function DataPolicy() {
           </P>
           <Ul>
             <li><strong>Electronically</strong> — by an authorized school official via email to{' '}
-              <strong>jbalums@gmail.com</strong> with a clear statement of acceptance on official school
+              <strong>privacy@aralsync.com</strong> with a clear statement of acceptance on official school
               letterhead; or</li>
             <li><strong>Manually (wet signature)</strong> — by printing, signing, and returning this document
-              to Joel Baluma, AralSync, <Placeholder>[YOUR CITY]</Placeholder>, Philippines.</li>
+              to ARALSYNC SOFTWARE DEVELOPMENT SERVICES, Tagbilaran City, Bohol, Philippines.</li>
           </Ul>
           <P>
             A downloadable PDF version of this Agreement is available upon request at{' '}
-            <strong>jbalums@gmail.com</strong>.
+            <strong>privacy@aralsync.com</strong>.
           </P>
         </Sub>
         <Sub title="14.3 Effective Date">
@@ -702,9 +698,11 @@ export default function DataPolicy() {
           </P>
         </Sub>
         <div className="mt-8 pt-6 border-t border-slate-200 text-[13.5px] text-slate-500 leading-relaxed">
-          <strong>Joel Baluma</strong><br />
-          AralSync · <Placeholder>[YOUR CITY]</Placeholder>, Philippines<br />
-          jbalums@gmail.com
+          <strong>ARALSYNC SOFTWARE DEVELOPMENT SERVICES</strong><br />
+          DTI Registration No.: 8212747<br />
+          Tagbilaran City, Bohol, Philippines<br />
+          Email: privacy@aralsync.com<br />
+          Website: aralsync.com
         </div>
       </Sec>
 
