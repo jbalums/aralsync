@@ -58,7 +58,7 @@ export function LegalLayout({
 						<span>·</span>
 						<span>Effective {effectiveDate}</span>
 						<span>·</span>
-						<span>AralSync / PrimaryLabs</span>
+						<span>AralSync </span>
 					</div>
 				</div>
 				{children}
@@ -66,9 +66,7 @@ export function LegalLayout({
 
 			<footer className="border-t border-slate-200 bg-slate-50">
 				<div className="max-w-3xl mx-auto px-6 py-8 text-[12px] text-slate-400 flex items-center justify-between flex-wrap gap-3">
-					<span>
-						© 2026 AralSync · PrimaryLabs Devs · Philippines
-					</span>
+					<span>© 2026 AralSync · Philippines</span>
 					<div className="flex items-center gap-5">
 						<a
 							href="/privacy"
