@@ -31,6 +31,7 @@ function AppRoot() {
         const stored = await db.users.filter((u) => Boolean(u.refreshToken)).first();
         if (stored?.refreshToken) {
           const tokens = await authService.refresh(stored.refreshToken);
+          setToken(tokens.accessToken);
           const user = await authService.me();
           await setAuth(user, tokens.accessToken, tokens.refreshToken);
         }

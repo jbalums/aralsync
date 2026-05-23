@@ -6,6 +6,9 @@ import { useAuthStore } from '../modules/auth/authStore';
 const Landing       = lazy(() => import('../pages/Landing'));
 const SignIn        = lazy(() => import('../pages/SignIn'));
 const Register      = lazy(() => import('../pages/Register'));
+const Privacy       = lazy(() => import('../pages/Privacy'));
+const Terms         = lazy(() => import('../pages/Terms'));
+const DataPolicy    = lazy(() => import('../pages/DataPolicy'));
 const AppShell      = lazy(() => import('../AppShell'));
 // Prototype pages: still have old routing props — cast until rewritten per phase
 const PageDashboard      = lazy(() => import('../pages/Dashboard').then(m => ({ default: m.PageDashboard }))) as unknown as RouteComponent;
@@ -41,6 +44,24 @@ export const registerRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/register',
   component: Register,
+});
+
+export const privacyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/privacy',
+  component: Privacy,
+});
+
+export const termsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/terms',
+  component: Terms,
+});
+
+export const dataPolicyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/data-policy',
+  component: DataPolicy,
 });
 
 // Keep /signin alias for backward-compat with existing landing page links
@@ -146,6 +167,9 @@ const routeTree = rootRoute.addChildren([
   landingRoute,
   loginRoute,
   registerRoute,
+  privacyRoute,
+  termsRoute,
+  dataPolicyRoute,
   signinRoute,
   appRoute.addChildren([
     appIndexRoute,

@@ -28,6 +28,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     const userId = useAuthStore.getState().user?.id;
     if (userId) {
       await db.users.update(userId, { refreshToken: undefined });
+    } else {
+      // Hydration failure: user never loaded into memory — wipe all stored refresh tokens
+      await db.users.toCollection().modify((u) => { delete u.refreshToken; });
     }
     set({ user: null, accessToken: null });
   },

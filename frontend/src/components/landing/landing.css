@@ -2,8 +2,8 @@ html {
 	scroll-behavior: smooth;
 }
 :root {
-	--primary: #0f766e;
-	--accent: #10b981;
+	--primary: #0a6b26;
+	--accent: rgb(15, 177, 77);
 	--navy: #0f172a;
 	--surface: #f8fafc;
 }
@@ -68,7 +68,7 @@ body {
 	transition: all 150ms ease;
 }
 .gradient-text {
-	background: linear-gradient(120deg, #0f766e 0%, #10b981 60%, #0ea5a4 100%);
+	background: linear-gradient(120deg, #0f762c 0%, #0f762c 60%, #0f762c 100%);
 	-webkit-background-clip: text;
 	background-clip: text;
 	color: transparent;

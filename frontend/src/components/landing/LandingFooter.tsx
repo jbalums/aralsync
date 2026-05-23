@@ -39,9 +39,9 @@ export function LandingFooter() {
         <div className="max-w-7xl mx-auto px-5 sm:px-8 py-5 flex items-center justify-between flex-wrap gap-3 text-[12px] text-white/40">
           <span>© 2024–2025 AralSync · v1.0.0 (Beta)</span>
           <div className="flex items-center gap-5">
-            <a href="#" className="hover:text-white">Privacy</a>
-            <a href="#" className="hover:text-white">Terms</a>
-            <a href="#" className="hover:text-white">Data policy</a>
+            <a href="/privacy" className="hover:text-white">Privacy</a>
+            <a href="/terms" className="hover:text-white">Terms</a>
+            <a href="/data-policy" className="hover:text-white">Data policy</a>
           </div>
         </div>
       </div>
