@@ -23,7 +23,7 @@ import { syncRouter } from "./modules/sync/sync.routes";
 
 const app = express();
 const PORT = process.env.PORT ?? 5000;
-const CLIENT_URL = process.env.CLIENT_URL ?? "http://localhost:5173";
+const CLIENT_URL = ["http://localhost:5173", "http://localhost:4173"]; //process.env.CLIENT_URL ?? "http://localhost:5173";
 
 app.use(helmet());
 app.use(cors({ origin: CLIENT_URL, credentials: true }));
@@ -57,7 +57,7 @@ const io = new SocketIOServer(server, {
 	},
 });
 
-app.locals['io'] = io;
+app.locals["io"] = io;
 registerSyncHandlers(io);
 
 async function bootstrap(): Promise<void> {
