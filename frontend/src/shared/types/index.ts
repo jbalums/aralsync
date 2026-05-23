@@ -105,6 +105,27 @@ export interface QuarterlyGrade {
   syncStatus: SyncStatus;
 }
 
+export interface ClassLoadListItem {
+  id: string;
+  teacherId: string;
+  subjectId: string;
+  sectionId: string;
+  schoolYearId: string;
+  quarter: Quarter;
+  roomNumber: string;
+  scheduleTime: string;
+  wwWeight: number;
+  ptWeight: number;
+  qaWeight: number;
+  subject: { id: string; name: string; gradeLevel: string };
+  section: { id: string; name: string; gradeLevel: string };
+  studentCount: number;
+}
+
+export interface ClassLoadDetail extends ClassLoadListItem {
+  schedule: { dayOfWeek: number[]; timeStart: string; timeEnd: string };
+}
+
 export interface SyncQueueItem {
   id?: number;
   tableName: string;

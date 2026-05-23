@@ -34,8 +34,11 @@ userSchema.index({ email: 1 });
 userSchema.index({ schoolId: 1 });
 
 userSchema.set('toJSON', {
-  transform: (_doc, ret) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  transform: (_doc: unknown, ret: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     delete ret.passwordHash;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     delete ret.refreshTokens;
     return ret;
   },
