@@ -50,16 +50,8 @@ export default function SignIn() {
           style={{ backgroundImage: 'linear-gradient(rgba(15,118,110,0.12) 1px,transparent 1px),linear-gradient(90deg,rgba(15,118,110,0.12) 1px,transparent 1px)', backgroundSize: '28px 28px' }} />
 
         <div className="relative">
-          <Link to="/" className="inline-flex items-center gap-2">
-            <span className="w-9 h-9 rounded-md bg-white/15 backdrop-blur inline-flex items-center justify-center">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12.55a11 11 0 0 1 14 0"/><path d="M8.5 16a6.5 6.5 0 0 1 7 0"/><circle cx="12" cy="20" r="1.2" fill="white" stroke="none"/>
-              </svg>
-            </span>
-            <span className="leading-none">
-              <span className="text-[22px] font-extrabold tracking-tight">Aral</span>
-              <span className="text-[22px] font-medium tracking-tight text-white/85">Sync</span>
-            </span>
+          <Link to="/">
+            <img src="/logo.png" alt="AralSync" style={{ height: 44, objectFit: 'contain' }} draggable={false} />
           </Link>
         </div>
 
@@ -79,13 +71,8 @@ export default function SignIn() {
       {/* Form panel */}
       <main className="flex flex-col items-center justify-center px-6 py-12 bg-surface min-h-screen lg:min-h-0">
         {/* Mobile logo */}
-        <div className="lg:hidden mb-8 flex items-center gap-2">
-          <span className="w-9 h-9 rounded-md bg-primary/10 inline-flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-              <path d="M5 12.55a11 11 0 0 1 14 0"/><path d="M8.5 16a6.5 6.5 0 0 1 7 0"/><circle cx="12" cy="20" r="1.2" fill="currentColor" stroke="none"/>
-            </svg>
-          </span>
-          <span className="text-[20px] font-bold tracking-tight text-navy">Aral<span className="font-medium text-muted">Sync</span></span>
+        <div className="lg:hidden mb-8">
+          <img src="/logo.png" alt="AralSync" style={{ height: 38, objectFit: 'contain' }} draggable={false} />
         </div>
 
         <div className="w-full max-w-[380px]">

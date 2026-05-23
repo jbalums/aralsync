@@ -33,15 +33,8 @@ const LANDING_HTML = `<style>
 <!-- ── NAV ──────────────────────────────────────────────── -->
 <header class="sticky top-0 z-30 bg-white/85 backdrop-blur-md border-b border-line/80">
   <div class="max-w-7xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
-    <a href="/" class="flex items-center gap-2 group">
-      <span class="w-8 h-8 rounded-md bg-primary inline-flex items-center justify-center">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M5 12.55a11 11 0 0 1 14 0"/><path d="M8.5 16a6.5 6.5 0 0 1 7 0"/><circle cx="12" cy="20" r="1.2" fill="white" stroke="none"/>
-        </svg>
-      </span>
-      <span class="leading-none">
-        <span class="text-[20px] font-extrabold tracking-tight text-primary">Aral</span><span class="text-[20px] font-medium tracking-tight text-navy/80">Sync</span>
-      </span>
+    <a href="/" class="flex items-center group">
+      <img src="/logo.png" alt="AralSync" style="height:38px; object-fit:contain;" draggable="false" />
     </a>
     <nav class="hidden md:flex items-center gap-7 text-[13.5px] text-navy/75 font-medium">
       <a href="#features" class="hover:text-primary tx">Features</a>
@@ -567,10 +560,7 @@ const LANDING_HTML = `<style>
   <div class="max-w-7xl mx-auto px-5 sm:px-8 py-12 grid grid-cols-2 md:grid-cols-5 gap-8">
     <div class="col-span-2">
       <div class="flex items-center gap-2">
-        <span class="w-8 h-8 rounded-md bg-emerald-500 inline-flex items-center justify-center">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14 0"/><path d="M8.5 16a6.5 6.5 0 0 1 7 0"/><circle cx="12" cy="20" r="1.2" fill="white" stroke="none"/></svg>
-        </span>
-        <span class="text-[20px] font-extrabold text-emerald-300">Aral<span class="font-medium text-white">Sync</span></span>
+        <img src="/logo.png" alt="AralSync" style="height:34px; object-fit:contain;" draggable="false" />
       </div>
       <p class="mt-3 text-[13px] text-white/55 max-w-xs">Offline-first classroom records for Philippine public school teachers.</p>
       <p class="mt-3 text-[11px] text-white/40">Teach more. Sync seamlessly.</p>
