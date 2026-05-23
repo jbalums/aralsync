@@ -241,9 +241,27 @@ export default function SignIn() {
 
 			{/* Form panel */}
 			<main className="relative flex flex-col items-center justify-center px-6 py-12 bg-surface min-h-screen lg:min-h-0 overflow-hidden">
+				{/* Background lift — soft mesh blobs */}
+				<div
+					aria-hidden="true"
+					className="hidden lg:block absolute -top-24 -left-20 w-[320px] h-[320px] rounded-full blur-3xl opacity-50 pointer-events-none"
+					style={{
+						background:
+							"radial-gradient(circle, #ccfbf1 0%, transparent 70%)",
+					}}
+				/>
+				<div
+					aria-hidden="true"
+					className="hidden lg:block absolute -bottom-32 -right-24 w-[360px] h-[360px] rounded-full blur-3xl opacity-25 pointer-events-none"
+					style={{
+						background:
+							"radial-gradient(circle, #10b981 0%, transparent 70%)",
+					}}
+				/>
+
 				{/* Subtle polygon accents */}
 				<svg
-					className="absolute inset-0 w-full h-full pointer-events-none opacity-60"
+					className="absolute inset-0 w-full h-full pointer-events-none opacity-80"
 					viewBox="0 0 600 900"
 					preserveAspectRatio="xMidYMid slice"
 					aria-hidden="true"
@@ -251,11 +269,17 @@ export default function SignIn() {
 					<polygon
 						points="500,60 560,100 560,180 500,220 440,180 440,100"
 						fill="none"
-						stroke="rgba(16,185,129,0.18)"
-						strokeWidth="1"
+						stroke="rgba(16,185,129,0.22)"
+						strokeWidth="1.5"
 					/>
 					<polygon
 						points="60,760 130,740 150,810 90,840"
+						fill="none"
+						stroke="rgba(16,185,129,0.2)"
+						strokeWidth="1.5"
+					/>
+					<polygon
+						points="540,420 580,455 565,510 515,500 505,455"
 						fill="none"
 						stroke="rgba(16,185,129,0.15)"
 						strokeWidth="1"
@@ -272,7 +296,84 @@ export default function SignIn() {
 						r="2.5"
 						fill="rgba(16,185,129,0.35)"
 					/>
+					<circle
+						cx="120"
+						cy="500"
+						r="2"
+						fill="rgba(16,185,129,0.25)"
+					/>
 				</svg>
+
+				{/* Mini animated illustration card — attendance row */}
+				<div
+					aria-hidden="true"
+					className="hidden xl:block absolute top-10 right-10 w-[280px] float-anim"
+				>
+					<div className="bg-white border border-line rounded-lg shadow-md p-4">
+						<div className="flex items-center justify-between mb-3">
+							<div className="text-[10px] font-semibold tracking-[0.14em] uppercase text-muted">
+								Today's attendance
+							</div>
+							<div className="text-[10px] text-muted">AM</div>
+						</div>
+						<div className="flex items-center gap-3">
+							<div className="w-9 h-9 rounded-full bg-primary-light text-primary text-[12px] font-semibold grid place-items-center shrink-0">
+								JD
+							</div>
+							<div className="flex-1 min-w-0">
+								<div className="text-[13px] font-medium text-navy truncate">
+									Juan Dela Cruz
+								</div>
+								<div className="text-[10px] text-muted">
+									LRN 1234-5678-9012
+								</div>
+							</div>
+							<div className="relative w-[78px] h-[22px] shrink-0">
+								<span
+									className="anim-status-out absolute inset-0 inline-flex items-center justify-center gap-1 rounded-full text-[10px] font-semibold"
+									style={{
+										backgroundColor: "#FEE2E2",
+										color: "#7F1D1D",
+									}}
+								>
+									<span
+										className="inline-block w-1.5 h-1.5 rounded-full"
+										style={{ backgroundColor: "#7F1D1D" }}
+									/>
+									Absent
+								</span>
+								<span
+									className="anim-status-in absolute inset-0 inline-flex items-center justify-center gap-1 rounded-full text-[10px] font-semibold"
+									style={{
+										backgroundColor: "#D1FAE5",
+										color: "#065F46",
+									}}
+								>
+									<svg
+										width="10"
+										height="10"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										strokeWidth="3"
+										strokeLinecap="round"
+										strokeLinejoin="round"
+									>
+										<polyline points="20 6 9 17 4 12" />
+									</svg>
+									Present
+								</span>
+							</div>
+						</div>
+						<div className="mt-3 pt-3 border-t border-line/70 flex items-center justify-between text-[10px]">
+							<span className="text-muted">Grade 7 — Rizal</span>
+							<span className="inline-flex items-center gap-1 text-primary font-medium">
+								<span className="inline-block w-1.5 h-1.5 rounded-full bg-primary pulse-dot" />
+								Synced
+							</span>
+						</div>
+					</div>
+				</div>
 				{/* Mobile logo */}
 				<div className="lg:hidden mb-8 relative">
 					<img

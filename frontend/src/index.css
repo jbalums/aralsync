@@ -377,6 +377,38 @@ textarea:focus-visible {
 	animation: float 6s ease-in-out infinite;
 }
 
+/* Auth illustration card animations */
+@keyframes status-swap-out {
+	0%, 40% { opacity: 1; }
+	50%, 90% { opacity: 0; }
+	100% { opacity: 1; }
+}
+@keyframes status-swap-in {
+	0%, 40% { opacity: 0; }
+	50%, 90% { opacity: 1; }
+	100% { opacity: 0; }
+}
+@keyframes grade-fill {
+	0%, 25% { opacity: 0; transform: translateY(2px); }
+	40%, 90% { opacity: 1; transform: translateY(0); }
+	100% { opacity: 0; transform: translateY(2px); }
+}
+@keyframes grade-empty {
+	0%, 25% { opacity: 1; }
+	40%, 90% { opacity: 0; }
+	100% { opacity: 1; }
+}
+@keyframes chip-rise {
+	0%, 45% { opacity: 0; transform: translateY(4px); }
+	60%, 90% { opacity: 1; transform: translateY(0); }
+	100% { opacity: 0; transform: translateY(4px); }
+}
+.anim-status-out { animation: status-swap-out 4.5s ease-in-out infinite; }
+.anim-status-in  { animation: status-swap-in  4.5s ease-in-out infinite; }
+.anim-grade-fill  { animation: grade-fill 5s ease-in-out infinite; }
+.anim-grade-empty { animation: grade-empty 5s ease-in-out infinite; }
+.anim-chip-rise   { animation: chip-rise 5s ease-in-out infinite; }
+
 @theme inline {
 	--font-heading: var(--font-sans);
 	--font-sans: "Geist Variable", sans-serif;

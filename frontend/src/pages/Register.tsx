@@ -278,9 +278,27 @@ export default function Register() {
 
 			{/* Form panel */}
 			<main className="relative flex flex-col items-center justify-center px-6 py-12 bg-surface min-h-screen lg:min-h-0 overflow-hidden">
+				{/* Background lift — soft mesh blobs */}
+				<div
+					aria-hidden="true"
+					className="hidden lg:block absolute -top-24 -left-20 w-[320px] h-[320px] rounded-full blur-3xl opacity-50 pointer-events-none"
+					style={{
+						background:
+							"radial-gradient(circle, #ccfbf1 0%, transparent 70%)",
+					}}
+				/>
+				<div
+					aria-hidden="true"
+					className="hidden lg:block absolute -bottom-32 -right-24 w-[360px] h-[360px] rounded-full blur-3xl opacity-25 pointer-events-none"
+					style={{
+						background:
+							"radial-gradient(circle, #10b981 0%, transparent 70%)",
+					}}
+				/>
+
 				{/* Subtle polygon accents */}
 				<svg
-					className="absolute inset-0 w-full h-full pointer-events-none opacity-60"
+					className="absolute inset-0 w-full h-full pointer-events-none opacity-80"
 					viewBox="0 0 600 900"
 					preserveAspectRatio="xMidYMid slice"
 					aria-hidden="true"
@@ -288,11 +306,17 @@ export default function Register() {
 					<polygon
 						points="500,60 560,100 560,180 500,220 440,180 440,100"
 						fill="none"
-						stroke="rgba(16,185,129,0.18)"
-						strokeWidth="1"
+						stroke="rgba(16,185,129,0.22)"
+						strokeWidth="1.5"
 					/>
 					<polygon
 						points="60,760 130,740 150,810 90,840"
+						fill="none"
+						stroke="rgba(16,185,129,0.2)"
+						strokeWidth="1.5"
+					/>
+					<polygon
+						points="540,420 580,455 565,510 515,500 505,455"
 						fill="none"
 						stroke="rgba(16,185,129,0.15)"
 						strokeWidth="1"
@@ -309,7 +333,73 @@ export default function Register() {
 						r="2.5"
 						fill="rgba(16,185,129,0.35)"
 					/>
+					<circle
+						cx="120"
+						cy="500"
+						r="2"
+						fill="rgba(16,185,129,0.25)"
+					/>
 				</svg>
+
+				{/* Mini animated illustration card — grade cell */}
+				<div
+					aria-hidden="true"
+					className="hidden xl:block absolute top-10 right-10 w-[280px] float-anim"
+				>
+					<div className="bg-white border border-line rounded-lg shadow-md p-4">
+						<div className="flex items-center justify-between mb-3">
+							<div className="text-[10px] font-semibold tracking-[0.14em] uppercase text-muted">
+								Written Works — Q1
+							</div>
+							<div className="text-[10px] text-muted">Science 7</div>
+						</div>
+						<div className="grid grid-cols-3 gap-2">
+							<div className="rounded-md border border-line bg-surface/60 px-2 py-2 text-center">
+								<div className="text-[9px] text-muted mb-0.5">
+									WW1
+								</div>
+								<div className="text-[12px] font-semibold text-navy">
+									17/20
+								</div>
+							</div>
+							<div className="rounded-md border border-line bg-surface/60 px-2 py-2 text-center">
+								<div className="text-[9px] text-muted mb-0.5">
+									WW2
+								</div>
+								<div className="text-[12px] font-semibold text-navy">
+									19/20
+								</div>
+							</div>
+							<div className="relative rounded-md border border-primary/40 bg-primary/5 px-2 py-2 text-center">
+								<div className="text-[9px] text-muted mb-0.5">
+									WW3
+								</div>
+								<div className="relative h-[14px]">
+									<span className="anim-grade-empty absolute inset-0 grid place-items-center text-[12px] font-semibold text-muted">
+										__
+									</span>
+									<span className="anim-grade-fill absolute inset-0 grid place-items-center text-[12px] font-semibold text-primary">
+										18/20
+									</span>
+								</div>
+							</div>
+						</div>
+						<div className="mt-3 pt-3 border-t border-line/70 flex items-center justify-between">
+							<span className="text-[10px] text-muted">
+								Q1 Grade
+							</span>
+							<span
+								className="anim-chip-rise inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-bold"
+								style={{
+									backgroundColor: "#CCFBF1",
+									color: "#0F766E",
+								}}
+							>
+								91
+							</span>
+						</div>
+					</div>
+				</div>
 				{/* Mobile logo */}
 				<div className="lg:hidden mb-8">
 					<img
