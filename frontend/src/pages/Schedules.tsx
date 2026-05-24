@@ -57,7 +57,7 @@ function parseFmtHM(val: string): { startH: number; startM: number } {
 
 // ── empty draft ───────────────────────────────────────────────────────────────
 function emptyDraft(day = 'Mon', hour = 8): Omit<ScheduleBlock, 'id'> {
-  return { dayOfWeek: DAY_MAP[day], title:'', section:'', room:'', startH: hour, startM:0, durMin:60, type:'class' };
+  return { dayOfWeek: DAY_MAP[day], title:'', section:'', room:'', startH: hour, startM:0, durMin:60, type:'class', classLoadId: undefined };
 }
 
 // ── main component ────────────────────────────────────────────────────────────
@@ -326,6 +326,7 @@ export function PageSchedules() {
           conflictMsg={conflictMsg}
           saving={createSchedule.isPending || updateSchedule.isPending}
           deleting={deleteSchedule.isPending}
+          classLoads={classLoads}
           onClose={() => { setEditing(null); setNewDraft(null); setConflictMsg(null); }}
           onSave={handleSave}
           onDelete={editing ? () => handleDelete(editing.id, editing.title) : undefined}
@@ -420,7 +421,7 @@ function DayHourCell({
 
 // ── EventEditor modal ─────────────────────────────────────────────────────────
 function EventEditor({
-  initial, isNew, conflictMsg, saving, deleting,
+  initial, isNew, conflictMsg, saving, deleting, classLoads,
   onClose, onSave, onDelete, onFieldChange,
 }: {
   initial:       Partial<ScheduleBlock>;
@@ -428,6 +429,7 @@ function EventEditor({
   conflictMsg:   string | null;
   saving:        boolean;
   deleting:      boolean;
+  classLoads:    any[];
   onClose:       () => void;
   onSave:        (form: any) => void;
   onDelete?:     () => void;
@@ -443,6 +445,26 @@ function EventEditor({
       return next;
     });
   }, [onFieldChange]);
+
+  const selectClassLoad = useCallback((cl: any) => {
+    setForm((prev: any) => {
+      const next = {
+        ...prev,
+        classLoadId: cl.id,
+        title:       cl.subject?.name ?? cl.subjectName ?? '',
+        section:     cl.section?.name ?? cl.sectionName ?? '',
+        room:        cl.roomNumber ?? prev.room ?? '',
+      };
+      onFieldChange(next);
+      return next;
+    });
+  }, [onFieldChange]);
+
+  const selectedClassLoad = useMemo(
+    () => classLoads.find((c: any) => c.id === form.classLoadId) ?? null,
+    [classLoads, form.classLoadId],
+  );
+  const linkedClassMissing = !!form.classLoadId && !selectedClassLoad;
 
   const dayStr  = IDX_DAY[form.dayOfWeek] ?? 'Mon';
   const timeVal = `${form.startH}:${form.startM ?? 0}`;
@@ -502,21 +524,27 @@ function EventEditor({
           </div>
         </Field>
 
-        {/* Title / subject */}
-        <Field label={form.type === 'class' ? 'Subject' : 'Label'} required>
-          <TextInput
-            value={form.title ?? ''}
-            onChange={(e) => set('title', e.target.value)}
-            placeholder={form.type === 'break' ? 'Lunch break' : form.type === 'meeting' ? 'Faculty meeting' : 'Subject name'}
-          />
-        </Field>
-
-        {form.type === 'class' && (
-          <Field label="Section">
+        {/* Class picker (type=class) OR Label text input (other types) */}
+        {form.type === 'class' ? (
+          <Field label="Class" required>
+            <ClassLoadPicker
+              value={form.classLoadId}
+              classLoads={classLoads}
+              selected={selectedClassLoad}
+              onSelect={selectClassLoad}
+            />
+            {linkedClassMissing && (
+              <div className="text-[11px] text-amber-700 mt-1">
+                Previously linked class was removed — pick another.
+              </div>
+            )}
+          </Field>
+        ) : (
+          <Field label="Label" required>
             <TextInput
-              value={form.section ?? ''}
-              onChange={(e) => set('section', e.target.value)}
-              placeholder="Grade 7 – Rizal"
+              value={form.title ?? ''}
+              onChange={(e) => set('title', e.target.value)}
+              placeholder={form.type === 'break' ? 'Lunch break' : form.type === 'meeting' ? 'Faculty meeting' : 'Title'}
             />
           </Field>
         )}
@@ -577,13 +605,129 @@ function EventEditor({
           </div>
         )}
 
-        {form.type === 'class' && !conflictMsg && (
+        {form.type === 'class' && !conflictMsg && selectedClassLoad && (
           <div className="rounded-md bg-primary-light/40 border border-primary-light p-3 text-[12px] text-primary-dark flex items-center gap-2">
             <Icon name="info" size={14}/>
-            This block links to <span className="font-semibold">{form.title || '-'}</span> in your class loads.
+            Linked to{' '}
+            <span className="font-semibold">
+              {selectedClassLoad.subject?.name ?? selectedClassLoad.subjectName ?? '-'}
+            </span>
+            {' · '}
+            <span className="font-semibold">
+              {selectedClassLoad.section?.name ?? selectedClassLoad.sectionName ?? '-'}
+            </span>
           </div>
         )}
       </div>
     </Modal>
+  );
+}
+
+// ── ClassLoadPicker ───────────────────────────────────────────────────────────
+function ClassLoadPicker({
+  value, classLoads, selected, onSelect,
+}: {
+  value:      string | undefined;
+  classLoads: any[];
+  selected:   any | null;
+  onSelect:   (cl: any) => void;
+}) {
+  const [open, setOpen]     = useState(false);
+  const [query, setQuery]   = useState('');
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onMouse = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onMouse);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onMouse);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return classLoads;
+    return classLoads.filter((c: any) => {
+      const sub = (c.subject?.name ?? c.subjectName ?? '').toLowerCase();
+      const sec = (c.section?.name ?? c.sectionName ?? '').toLowerCase();
+      const gl  = (c.section?.gradeLevel ?? '').toLowerCase();
+      return sub.includes(q) || sec.includes(q) || gl.includes(q);
+    });
+  }, [classLoads, query]);
+
+  const triggerLabel = selected
+    ? `${selected.subject?.name ?? selected.subjectName ?? '-'} — ${selected.section?.name ?? selected.sectionName ?? '-'}`
+    : value
+      ? 'Select a class…'
+      : 'Select a class…';
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => { setOpen(o => !o); setQuery(''); }}
+        className="w-full h-9 px-3 text-[13px] rounded-md border border-line bg-white focus:border-primary focus:outline-none tx flex items-center justify-between gap-2 text-left"
+      >
+        <span className={selected ? 'text-navy truncate' : 'text-muted-light truncate'}>
+          {triggerLabel}
+        </span>
+        <Icon name="chevron-down" size={14} className="text-muted shrink-0"/>
+      </button>
+
+      {open && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-line rounded-md shadow-lg overflow-hidden">
+          {classLoads.length === 0 ? (
+            <div className="px-3 py-4 text-[12px] text-muted text-center">
+              No classes yet — create one in Classes first.
+            </div>
+          ) : (
+            <>
+              <div className="p-2 border-b border-line">
+                <input
+                  autoFocus
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search subject, section, or grade…"
+                  className="w-full h-8 px-2 text-[12.5px] rounded border border-line focus:border-primary focus:outline-none"
+                />
+              </div>
+              <div className="max-h-60 overflow-y-auto">
+                {filtered.length === 0 ? (
+                  <div className="px-3 py-3 text-[12px] text-muted text-center">No matches.</div>
+                ) : filtered.map((c: any) => {
+                  const subName = c.subject?.name ?? c.subjectName ?? '-';
+                  const secName = c.section?.name ?? c.sectionName ?? '-';
+                  const isSel   = c.id === value;
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => { onSelect(c); setOpen(false); }}
+                      className={`w-full text-left px-3 py-2 hover:bg-surface flex items-start justify-between gap-2 ${isSel ? 'bg-primary-light/60' : ''}`}
+                    >
+                      <div className="min-w-0">
+                        <div className={`text-[13px] truncate ${isSel ? 'text-primary-dark font-semibold' : 'text-navy font-semibold'}`}>
+                          {subName} — {secName}
+                        </div>
+                        {c.roomNumber && (
+                          <div className="text-[11px] text-muted truncate">Room {c.roomNumber}</div>
+                        )}
+                      </div>
+                      {isSel && <Icon name="check" size={13} className="text-primary-dark mt-0.5 shrink-0"/>}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
