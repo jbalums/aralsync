@@ -1,7 +1,6 @@
-// @ts-nocheck
 import React, { useState, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, type FieldValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import * as XLSX from 'xlsx';
@@ -17,12 +16,14 @@ import {
   useStudentAttendanceSummary,
   useCreateStudent,
   useImportStudents,
+  useUpdateStudent,
 } from '../modules/students/useStudents';
 import { useClassLoads } from '../modules/classrooms/useClassLoads';
 import { validateLRN } from '../shared/utils/lrn';
-import type { StudentImportRow } from '../modules/students/students.service';
+import type { ImportResult, StudentImportRow } from '../modules/students/students.service';
+import type { ClassLoadListItem, Student } from '../shared/types';
 
-// ─── Add-student form schema ─────────────────────────────
+// ─── Schemas ─────────────────────────────────────────────
 const addSchema = z.object({
   lrn:           z.string().length(12, 'LRN must be 12 digits').regex(/^\d{12}$/, 'LRN must contain only digits'),
   lastName:      z.string().min(1, 'Required'),
@@ -36,6 +37,18 @@ const addSchema = z.object({
   guardianContact:    z.string().default(''),
 });
 type AddFormValues = z.infer<typeof addSchema>;
+
+const editSchema = z.object({
+  lastName:             z.string().min(1, 'Required'),
+  firstName:            z.string().min(1, 'Required'),
+  middleInitial:        z.string().max(2).optional(),
+  gender:               z.enum(['M', 'F']),
+  birthday:             z.string().optional(),
+  guardianName:         z.string().optional(),
+  guardianRelationship: z.string().optional(),
+  guardianContact:      z.string().optional(),
+});
+type EditFormValues = z.infer<typeof editSchema>;
 
 // ─── CSV row normaliser ──────────────────────────────────
 function normalizeImportRow(raw: Record<string, string>): StudentImportRow | null {
@@ -91,7 +104,7 @@ export function PageStudents() {
               className="w-full h-9 pl-9 pr-3 text-[13px] rounded-md border border-line bg-white focus:border-primary focus:outline-none"
             />
           </div>
-          <Select value={classLoadId} onChange={(e) => { setClassLoadId(e.target.value); setPage(1); }} className="!h-9 max-w-[240px]">
+          <Select value={classLoadId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setClassLoadId(e.target.value); setPage(1); }} className="!h-9 max-w-[240px]">
             <option value="">All classes</option>
             {classLoads.map((c) => (
               <option key={c.id} value={c.id}>{c.section.gradeLevel} · {c.section.name} · {c.subject.name}</option>
@@ -106,7 +119,7 @@ export function PageStudents() {
           <div className="p-4 space-y-2">{[1,2,3,4,5].map((i) => <Skeleton key={i} className="h-12"/>)}</div>
         ) : students.length === 0 ? (
           <div className="p-10 text-center">
-            <EmptyState icon="users" title="No students found" description={q ? 'Try a different search.' : 'Add or import students to get started.'}/>
+            <EmptyState icon="users" title="No students found" description={q ? 'Try a different search.' : 'Add or import students to get started.'} action={undefined}/>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -132,7 +145,7 @@ export function PageStudents() {
                       <div className="flex items-center gap-2.5">
                         <Avatar name={`${s.firstName} ${s.lastName}`} size="sm"/>
                         <span className="font-semibold text-navy">
-                          {s.lastName}, {s.firstName}{s.middleName ? ` ${s.middleName.slice(0,1)}.` : ''}
+                          {s.lastName}, {s.firstName}{s.middleInitial ? ` ${s.middleInitial.slice(0,1)}.` : ''}
                         </span>
                       </div>
                     </td>
@@ -186,7 +199,14 @@ export function PageStudents() {
 
 // ─── Add-student modal ───────────────────────────────────
 
-function AddStudentModal({ open, onClose, classLoads, onSuccess }) {
+interface AddStudentModalProps {
+  open: boolean;
+  onClose: () => void;
+  classLoads: ClassLoadListItem[];
+  onSuccess?: () => void;
+}
+
+function AddStudentModal({ open, onClose, classLoads, onSuccess }: AddStudentModalProps) {
   const createMutation = useCreateStudent();
   const [lrnTouched, setLrnTouched] = useState(false);
 
@@ -322,13 +342,20 @@ function AddStudentModal({ open, onClose, classLoads, onSuccess }) {
 
 // ─── CSV import modal ────────────────────────────────────
 
-function ImportCSVModal({ open, onClose, classLoads, onSuccess }) {
+interface ImportCSVModalProps {
+  open: boolean;
+  onClose: () => void;
+  classLoads: ClassLoadListItem[];
+  onSuccess?: (r: ImportResult) => void;
+}
+
+function ImportCSVModal({ open, onClose, classLoads, onSuccess }: ImportCSVModalProps) {
   const importMutation = useImportStudents();
   const fileRef = useRef<HTMLInputElement>(null);
   const [rows, setRows] = useState<StudentImportRow[]>([]);
   const [parseError, setParseError] = useState('');
   const [classLoadId, setClassLoadId] = useState('');
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState<ImportResult | null>(null);
 
   const handleFile = useCallback((file: File) => {
     setParseError('');
@@ -442,7 +469,7 @@ function ImportCSVModal({ open, onClose, classLoads, onSuccess }) {
 
           <div className="flex items-center gap-3">
             <label className="text-[13px] font-medium text-navy min-w-max">Assign to class:</label>
-            <Select value={classLoadId} onChange={(e) => setClassLoadId(e.target.value)} className="flex-1">
+            <Select value={classLoadId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setClassLoadId(e.target.value)} className="flex-1">
               <option value="">Select class…</option>
               {classLoads.map((c) => (
                 <option key={c.id} value={c.id}>{c.section.gradeLevel} · {c.section.name} · {c.subject.name}</option>
@@ -484,12 +511,131 @@ function ImportCSVModal({ open, onClose, classLoads, onSuccess }) {
   );
 }
 
+// ─── Edit-student modal ───────────────────────────────────
+
+interface EditStudentModalProps {
+  open: boolean;
+  onClose: () => void;
+  student: Student;
+  onSuccess?: () => void;
+}
+
+function EditStudentModal({ open, onClose, student, onSuccess }: EditStudentModalProps) {
+  const updateMutation = useUpdateStudent();
+
+  const {
+    register, handleSubmit, reset,
+    formState: { errors, isSubmitting },
+    setError,
+  } = useForm({
+    resolver: zodResolver(editSchema),
+  });
+
+  // Pre-fill when student changes or modal opens
+  React.useEffect(() => {
+    if (open) {
+      reset({
+        lastName:             student.lastName,
+        firstName:            student.firstName,
+        middleInitial:        student.middleInitial ?? '',
+        gender:               student.gender,
+        birthday:             student.birthday ?? '',
+        guardianName:         student.guardian?.name ?? '',
+        guardianRelationship: student.guardian?.relationship ?? '',
+        guardianContact:      student.guardian?.contactNumber ?? '',
+      });
+    }
+  }, [open, student, reset]);
+
+  const onSubmit = async (raw: FieldValues) => {
+    try {
+      await updateMutation.mutateAsync({
+        id: student.id,
+        payload: {
+          lastName:      raw.lastName,
+          firstName:     raw.firstName,
+          middleInitial: raw.middleInitial,
+          gender:        raw.gender,
+          birthday:      raw.birthday,
+          guardian: {
+            name:          raw.guardianName ?? '',
+            relationship:  raw.guardianRelationship ?? '',
+            contactNumber: raw.guardianContact ?? '',
+          },
+        },
+      });
+      onSuccess?.();
+      onClose();
+    } catch (err) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setError('root', { message: msg ?? 'Failed to update student.' });
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Edit student"
+      subtitle={`${student.lastName}, ${student.firstName}`}
+      width="max-w-2xl"
+      footer={<>
+        <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
+        <Btn variant="primary" icon="save"
+          onClick={() => { void handleSubmit(onSubmit)(); }}
+          disabled={isSubmitting || updateMutation.isPending}
+        >
+          {isSubmitting || updateMutation.isPending ? 'Saving…' : 'Save changes'}
+        </Btn>
+      </>}
+    >
+      <form className="grid grid-cols-3 gap-3" noValidate>
+        {errors.root && (
+          <div className="col-span-3 rounded-md bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">
+            {errors.root.message}
+          </div>
+        )}
+        <Field label="Last name" required error={errors.lastName?.message}>
+          <TextInput placeholder="dela Cruz" {...register('lastName')}/>
+        </Field>
+        <Field label="First name" required error={errors.firstName?.message}>
+          <TextInput placeholder="Juan" {...register('firstName')}/>
+        </Field>
+        <Field label="Middle initial">
+          <TextInput placeholder="R" maxLength={2} {...register('middleInitial')}/>
+        </Field>
+        <Field label="Gender">
+          <Select {...register('gender')}>
+            <option value="F">Female</option>
+            <option value="M">Male</option>
+          </Select>
+        </Field>
+        <Field label="Birthday">
+          <TextInput type="date" {...register('birthday')}/>
+        </Field>
+        <div className="col-span-1"/>
+        <Field label="Guardian name">
+          <TextInput placeholder="Rosario dela Cruz" {...register('guardianName')}/>
+        </Field>
+        <Field label="Relationship">
+          <TextInput placeholder="Mother" {...register('guardianRelationship')}/>
+        </Field>
+        <Field label="Contact number">
+          <TextInput placeholder="+63 917 123 4567" {...register('guardianContact')}/>
+        </Field>
+      </form>
+    </Modal>
+  );
+}
+
 // ─── STUDENT PROFILE ─────────────────────────────────────
 
 export function PageStudentProfile() {
   const navigate = useNavigate();
+  const toast = useToast();
   const { studentId } = useParams({ strict: false }) as { studentId: string };
   const [tab, setTab] = useState('overview');
+  const [editOpen, setEditOpen] = useState(false);
 
   const { data: student, isLoading } = useStudent(studentId);
   const { data: summary } = useStudentAttendanceSummary(studentId);
@@ -506,10 +652,10 @@ export function PageStudentProfile() {
   }
 
   if (!student) {
-    return <EmptyState icon="alert-circle" title="Student not found" description="This student does not exist or you don't have access."/>;
+    return <EmptyState icon="alert-circle" title="Student not found" description="This student does not exist or you don't have access." action={undefined}/>;
   }
 
-  const fullName = `${student.firstName}${student.middleName ? ` ${student.middleName.slice(0,1)}.` : ''} ${student.lastName}`;
+  const fullName = `${student.firstName}${student.middleInitial ? ` ${student.middleInitial.slice(0,1)}.` : ''} ${student.lastName}`;
 
   return (
     <div className="page-anim space-y-5">
@@ -524,7 +670,7 @@ export function PageStudentProfile() {
           <Avatar name={fullName} size="xl"/>
           <div className="flex-1 min-w-0">
             <h2 className="text-[24px] font-semibold tracking-tight text-navy">
-              {student.lastName}, {student.firstName}{student.middleName ? ` ${student.middleName.slice(0,1)}.` : ''}
+              {student.lastName}, {student.firstName}{student.middleInitial ? ` ${student.middleInitial.slice(0,1)}.` : ''}
             </h2>
             <div className="text-[13px] text-muted mt-0.5">
               LRN <span className="font-mono">{student.lrn}</span> · {student.gender === 'M' ? 'Male' : 'Female'}
@@ -543,7 +689,7 @@ export function PageStudentProfile() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Btn variant="secondary" size="sm" icon="pencil">Edit</Btn>
+            <Btn variant="secondary" size="sm" icon="pencil" onClick={() => setEditOpen(true)}>Edit</Btn>
           </div>
         </div>
       </Card>
@@ -614,6 +760,13 @@ export function PageStudentProfile() {
           <p className="text-[13px] text-muted mt-1">Gradebook must be wired first.</p>
         </Card>
       )}
+
+      <EditStudentModal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        student={student}
+        onSuccess={() => toast?.push({ type: 'success', title: 'Student updated', message: 'Changes saved.' })}
+      />
     </div>
   );
 }

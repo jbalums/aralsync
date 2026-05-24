@@ -69,9 +69,10 @@ export interface Student {
   sectionId: string;
   lastName: string;
   firstName: string;
-  middleName?: string;
+  middleInitial?: string;
   gender: 'M' | 'F';
-  birthDate?: string;
+  birthday?: string;
+  guardian?: { name: string; relationship: string; contactNumber: string };
 }
 
 export interface AttendanceRecord {

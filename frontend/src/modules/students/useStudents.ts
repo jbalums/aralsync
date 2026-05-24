@@ -4,6 +4,7 @@ import {
   type CreateStudentPayload,
   type StudentImportRow,
 } from './students.service';
+import type { Student } from '../../shared/types';
 
 export const STUDENT_KEYS = {
   all:     ['students'] as const,
@@ -55,6 +56,18 @@ export function useCreateStudent() {
   return useMutation({
     mutationFn: (payload: CreateStudentPayload) => studentsService.create(payload),
     onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: STUDENT_KEYS.all });
+    },
+  });
+}
+
+export function useUpdateStudent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: Partial<Omit<CreateStudentPayload, 'lrn' | 'classLoadId'>> }) =>
+      studentsService.update(id, payload),
+    onSuccess: (_data: Student, { id }: { id: string; payload: Partial<Omit<CreateStudentPayload, 'lrn' | 'classLoadId'>> }) => {
+      void qc.invalidateQueries({ queryKey: STUDENT_KEYS.detail(id) });
       void qc.invalidateQueries({ queryKey: STUDENT_KEYS.all });
     },
   });

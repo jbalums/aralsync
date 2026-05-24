@@ -279,8 +279,10 @@ export function Modal({
 }
 
 // Toast system via context
-const ToastCtx = createContext(null);
-export function useToast() {
+export interface ToastInput { type?: 'success' | 'error' | 'warning' | 'info'; title?: string; message?: string; duration?: number; }
+interface ToastAPI { push: (t: ToastInput) => string; remove: (id: string) => void; }
+const ToastCtx = createContext<ToastAPI | null>(null);
+export function useToast(): ToastAPI | null {
 	return useContext(ToastCtx);
 }
 export function ToastProvider({ children }) {
