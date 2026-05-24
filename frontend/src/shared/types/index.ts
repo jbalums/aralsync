@@ -133,8 +133,17 @@ export interface ClassLoadListItem {
   studentCount: number;
 }
 
+export interface ClassScheduleSlot {
+  id?: string;
+  dayOfWeek: number;
+  timeStart: string;
+  timeEnd: string;
+  room?: string;
+}
+
 export interface ClassLoadDetail extends ClassLoadListItem {
   schedule: { dayOfWeek: number[]; timeStart: string; timeEnd: string };
+  slots: ClassScheduleSlot[];
 }
 
 export interface AdminSummary {

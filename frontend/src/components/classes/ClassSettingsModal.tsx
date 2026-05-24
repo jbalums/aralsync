@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,7 +13,8 @@ import {
 	useToast,
 } from "..";
 import { useUpdateClassLoad } from "../../modules/classrooms/useClassLoads";
-import type { ClassLoadDetail } from "../../shared/types";
+import type { ClassLoadDetail, ClassScheduleSlot } from "../../shared/types";
+import { ClassSlotsEditor } from "./ClassSlotsEditor";
 
 const settingsSchema = z
 	.object({
@@ -22,9 +23,6 @@ const settingsSchema = z
 		wwPct: z.coerce.number().int().min(1).max(98),
 		ptPct: z.coerce.number().int().min(1).max(98),
 		qaPct: z.coerce.number().int().min(1).max(98),
-		timeStart: z.string().default(""),
-		timeEnd: z.string().default(""),
-		dayOfWeek: z.array(z.number().int().min(1).max(6)).default([]),
 	})
 	.refine((d) => d.wwPct + d.ptPct + d.qaPct === 100, {
 		message: "Component weights must total 100%",
@@ -33,14 +31,21 @@ const settingsSchema = z
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 
-const DAY_LABELS = [
-	{ label: "Mon", value: 1 },
-	{ label: "Tue", value: 2 },
-	{ label: "Wed", value: 3 },
-	{ label: "Thu", value: 4 },
-	{ label: "Fri", value: 5 },
-	{ label: "Sat", value: 6 },
-];
+function hydrateSlots(cls: ClassLoadDetail): ClassScheduleSlot[] {
+	if (cls.slots?.length) {
+		return cls.slots.map((s) => ({ ...s }));
+	}
+	const legacy = cls.schedule;
+	if (legacy?.dayOfWeek?.length && legacy.timeStart && legacy.timeEnd) {
+		return legacy.dayOfWeek.map((day) => ({
+			dayOfWeek: day,
+			timeStart: legacy.timeStart,
+			timeEnd: legacy.timeEnd,
+			room: cls.roomNumber ?? "",
+		}));
+	}
+	return [];
+}
 
 interface ClassSettingsModalProps {
 	open: boolean;
@@ -51,13 +56,13 @@ interface ClassSettingsModalProps {
 export function ClassSettingsModal({ open, onClose, cls }: ClassSettingsModalProps) {
 	const toast = useToast();
 	const updateMutation = useUpdateClassLoad(cls.id);
+	const [slots, setSlots] = useState<ClassScheduleSlot[]>(() => hydrateSlots(cls));
 
 	const {
 		register,
 		handleSubmit,
 		watch,
 		reset,
-		setValue,
 		formState: { errors, isSubmitting },
 	} = useForm<SettingsFormValues>({
 		resolver: zodResolver(settingsSchema),
@@ -67,9 +72,6 @@ export function ClassSettingsModal({ open, onClose, cls }: ClassSettingsModalPro
 			wwPct: Math.round(cls.wwWeight * 100),
 			ptPct: Math.round(cls.ptWeight * 100),
 			qaPct: Math.round(cls.qaWeight * 100),
-			timeStart: cls.schedule?.timeStart ?? "",
-			timeEnd: cls.schedule?.timeEnd ?? "",
-			dayOfWeek: cls.schedule?.dayOfWeek ?? [],
 		},
 	});
 
@@ -81,34 +83,35 @@ export function ClassSettingsModal({ open, onClose, cls }: ClassSettingsModalPro
 				wwPct: Math.round(cls.wwWeight * 100),
 				ptPct: Math.round(cls.ptWeight * 100),
 				qaPct: Math.round(cls.qaWeight * 100),
-				timeStart: cls.schedule?.timeStart ?? "",
-				timeEnd: cls.schedule?.timeEnd ?? "",
-				dayOfWeek: cls.schedule?.dayOfWeek ?? [],
 			});
+			setSlots(hydrateSlots(cls));
 		}
 	}, [open]);
 
 	const [ww, pt, qa] = watch(["wwPct", "ptPct", "qaPct"]);
 	const weightSum =
 		(parseFloat(ww) ?? 0) + (parseFloat(pt) ?? 0) + (parseFloat(qa) ?? 0);
-	const selectedDays = watch("dayOfWeek") ?? [];
-
-	const toggleDay = (v: number) => {
-		const current = selectedDays;
-		setValue(
-			"dayOfWeek",
-			current.includes(v)
-				? current.filter((d) => d !== v)
-				: [...current, v].sort(),
-			{ shouldValidate: true },
-		);
-	};
 
 	const handleClose = () => {
 		onClose();
 	};
 
+	const slotsValid = slots.every((s) => {
+		if (!s.timeStart || !s.timeEnd) return false;
+		const [sh, sm] = s.timeStart.split(":").map(Number);
+		const [eh, em] = s.timeEnd.split(":").map(Number);
+		return eh * 60 + em > sh * 60 + sm;
+	});
+
 	const onSubmit = async (values: SettingsFormValues) => {
+		if (!slotsValid) {
+			toast.push({
+				type: "error",
+				title: "Invalid schedule",
+				message: "Each slot needs a valid start and end time.",
+			});
+			return;
+		}
 		try {
 			await updateMutation.mutateAsync({
 				roomNumber: values.roomNumber,
@@ -118,11 +121,7 @@ export function ClassSettingsModal({ open, onClose, cls }: ClassSettingsModalPro
 					pt: values.ptPct / 100,
 					qa: values.qaPct / 100,
 				},
-				schedule: {
-					dayOfWeek: values.dayOfWeek,
-					timeStart: values.timeStart,
-					timeEnd: values.timeEnd,
-				},
+				slots,
 			});
 			toast.push({
 				type: "success",
@@ -181,36 +180,18 @@ export function ClassSettingsModal({ open, onClose, cls }: ClassSettingsModalPro
 					</Select>
 				</Field>
 
-				<Field label="Time start" error={errors.timeStart?.message}>
-					<TextInput type="time" {...register("timeStart")} />
-				</Field>
-				<Field label="Time end" error={errors.timeEnd?.message}>
-					<TextInput type="time" {...register("timeEnd")} />
-				</Field>
-
 				<div className="col-span-2">
 					<div className="text-[12px] font-semibold text-navy mb-2">
-						Days of week
+						Schedule slots{" "}
+						<span className="text-muted font-normal">
+							(add one row per meeting day/time)
+						</span>
 					</div>
-					<div className="flex gap-2 flex-wrap">
-						{DAY_LABELS.map(({ label, value }) => {
-							const active = selectedDays.includes(value);
-							return (
-								<button
-									key={value}
-									type="button"
-									onClick={() => toggleDay(value)}
-									className={`px-3 h-8 rounded-md text-[12.5px] font-semibold transition-colors border ${
-										active
-											? "bg-navy text-white border-navy"
-											: "bg-white text-navy border-line hover:bg-surface"
-									}`}
-								>
-									{label}
-								</button>
-							);
-						})}
-					</div>
+					<ClassSlotsEditor
+						slots={slots}
+						defaultRoom={watch("roomNumber") ?? cls.roomNumber ?? ""}
+						onChange={setSlots}
+					/>
 				</div>
 
 				<div className="col-span-2 mt-2">

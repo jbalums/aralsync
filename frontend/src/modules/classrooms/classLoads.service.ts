@@ -1,10 +1,17 @@
 import { http } from '../../services/http';
-import type { ClassLoadListItem, ClassLoadDetail, Student, Quarter } from '../../shared/types';
+import type {
+  ClassLoadListItem,
+  ClassLoadDetail,
+  ClassScheduleSlot,
+  Student,
+  Quarter,
+} from '../../shared/types';
 
 export interface UpdateClassLoadPayload {
   roomNumber?: string;
   quarter?: Quarter;
   schedule?: { dayOfWeek: number[]; timeStart: string; timeEnd: string };
+  slots?: ClassScheduleSlot[];
   weights?: { ww: number; pt: number; qa: number };
 }
 
@@ -15,6 +22,7 @@ export interface CreateClassLoadPayload {
   quarter: Quarter;
   roomNumber?: string;
   schedule?: { dayOfWeek: number[]; timeStart: string; timeEnd: string };
+  slots?: ClassScheduleSlot[];
   weights: { ww: number; pt: number; qa: number };
 }
 

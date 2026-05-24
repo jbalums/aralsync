@@ -3,6 +3,7 @@ export { SubjectCombobox } from "./SubjectCombobox";
 export { ClassLoadCard } from "./ClassLoadCard";
 export { CreateClassModal } from "./CreateClassModal";
 export { ClassSettingsModal } from "./ClassSettingsModal";
+export { ClassSlotsEditor } from "./ClassSlotsEditor";
 export { ClassOverviewTab } from "./ClassOverviewTab";
 export { ClassStudentsTab } from "./ClassStudentsTab";
 export { ClassAttendancePlaceholder } from "./ClassAttendancePlaceholder";

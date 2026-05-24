@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -15,6 +16,8 @@ import { useCreateClassLoad } from "../../modules/classrooms/useClassLoads";
 import { gradeLevels } from "../../data/phEducation";
 import { GradeLevelCombobox } from "./GradeLevelCombobox";
 import { SubjectCombobox } from "./SubjectCombobox";
+import { ClassSlotsEditor } from "./ClassSlotsEditor";
+import type { ClassScheduleSlot } from "../../shared/types";
 
 const createSchema = z
 	.object({
@@ -42,6 +45,7 @@ interface CreateClassModalProps {
 export function CreateClassModal({ open, onClose }: CreateClassModalProps) {
 	const toast = useToast();
 	const createMutation = useCreateClassLoad();
+	const [slots, setSlots] = useState<ClassScheduleSlot[]>([]);
 
 	const {
 		register,
@@ -75,7 +79,15 @@ export function CreateClassModal({ open, onClose }: CreateClassModalProps) {
 	const handleClose = () => {
 		onClose();
 		reset();
+		setSlots([]);
 	};
+
+	const validSlots = slots.filter((s) => {
+		if (!s.timeStart || !s.timeEnd) return false;
+		const [sh, sm] = s.timeStart.split(":").map(Number);
+		const [eh, em] = s.timeEnd.split(":").map(Number);
+		return eh * 60 + em > sh * 60 + sm;
+	});
 
 	const onSubmit = async (values: CreateFormValues) => {
 		try {
@@ -85,6 +97,7 @@ export function CreateClassModal({ open, onClose }: CreateClassModalProps) {
 				sectionName: values.sectionName,
 				quarter: values.quarter,
 				roomNumber: values.roomNumber,
+				slots: validSlots.length ? validSlots : undefined,
 				weights: {
 					ww: values.wwPct / 100,
 					pt: values.ptPct / 100,
@@ -193,6 +206,20 @@ export function CreateClassModal({ open, onClose }: CreateClassModalProps) {
 						))}
 					</Select>
 				</Field>
+
+				<div className="col-span-2 mt-1">
+					<div className="text-[12px] font-semibold text-navy mb-2">
+						Schedule{" "}
+						<span className="text-muted font-normal">
+							(optional — you can add later)
+						</span>
+					</div>
+					<ClassSlotsEditor
+						slots={slots}
+						defaultRoom={watch("roomNumber") ?? ""}
+						onChange={setSlots}
+					/>
+				</div>
 
 				<div className="col-span-2 mt-2">
 					<div className="text-[12px] font-semibold text-navy mb-2">

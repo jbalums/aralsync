@@ -10,6 +10,27 @@ const weightsSchema = z
     message: 'Component weights must sum to 1.0',
   });
 
+const timeString = z
+  .string()
+  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Time must be HH:MM (24h)');
+
+const slotSchema = z
+  .object({
+    id: z.string().optional(),
+    dayOfWeek: z.number().int().min(0).max(6),
+    timeStart: timeString,
+    timeEnd: timeString,
+    room: z.string().optional(),
+  })
+  .refine(
+    (s) => {
+      const [sh, sm] = s.timeStart.split(':').map(Number);
+      const [eh, em] = s.timeEnd.split(':').map(Number);
+      return eh * 60 + em > sh * 60 + sm;
+    },
+    { message: 'timeEnd must be after timeStart', path: ['timeEnd'] },
+  );
+
 export const createClassLoadSchema = z.object({
   subjectName: z.string().min(1, 'Subject name is required'),
   gradeLevel: z.number().int().min(7).max(12),
@@ -23,6 +44,7 @@ export const createClassLoadSchema = z.object({
       timeEnd: z.string().default(''),
     })
     .optional(),
+  slots: z.array(slotSchema).optional(),
   weights: weightsSchema.optional().default({ ww: 0.2, pt: 0.6, qa: 0.2 }),
 });
 
@@ -38,5 +60,6 @@ export const updateClassLoadSchema = z.object({
       timeEnd: z.string().default(''),
     })
     .optional(),
+  slots: z.array(slotSchema).optional(),
   weights: weightsSchema.optional(),
 });

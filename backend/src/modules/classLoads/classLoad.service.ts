@@ -8,10 +8,27 @@ import { User } from '../../database/models/User.model';
 import { Schedule } from '../../database/models/Schedule.model';
 import { Quarter } from '../../shared/types';
 
+export interface SlotInput {
+  id?: string;
+  dayOfWeek: number;
+  timeStart: string;
+  timeEnd: string;
+  room?: string;
+}
+
+export interface SlotOutput {
+  id: string;
+  dayOfWeek: number;
+  timeStart: string;
+  timeEnd: string;
+  room: string;
+}
+
 interface UpdateClassLoadDto {
   roomNumber?: string;
   quarter?: Quarter;
   schedule?: { dayOfWeek: number[]; timeStart: string; timeEnd: string };
+  slots?: SlotInput[];
   weights?: { ww: number; pt: number; qa: number };
 }
 
@@ -22,7 +39,134 @@ interface CreateClassLoadDto {
   quarter: Quarter;
   roomNumber?: string;
   schedule?: { dayOfWeek: number[]; timeStart: string; timeEnd: string };
+  slots?: SlotInput[];
   weights: { ww: number; pt: number; qa: number };
+}
+
+function pad2(n: number): string {
+  return n.toString().padStart(2, '0');
+}
+
+function parseHM(s: string): { h: number; m: number } {
+  const [h = 0, m = 0] = s.split(':').map((v) => Number(v) || 0);
+  return { h, m };
+}
+
+function slotEndMinutes(slot: SlotInput): number {
+  const { h, m } = parseHM(slot.timeEnd);
+  return h * 60 + m;
+}
+
+function slotStartMinutes(slot: SlotInput): number {
+  const { h, m } = parseHM(slot.timeStart);
+  return h * 60 + m;
+}
+
+function deriveEmbedded(slots: SlotInput[]): {
+  dayOfWeek: number[];
+  timeStart: string;
+  timeEnd: string;
+} {
+  if (!slots.length) return { dayOfWeek: [], timeStart: '', timeEnd: '' };
+
+  const days = Array.from(new Set(slots.map((s) => s.dayOfWeek))).sort((a, b) => a - b);
+
+  let minStart = Infinity;
+  let maxEnd = -Infinity;
+  for (const slot of slots) {
+    minStart = Math.min(minStart, slotStartMinutes(slot));
+    maxEnd = Math.max(maxEnd, slotEndMinutes(slot));
+  }
+
+  const startH = Math.floor(minStart / 60);
+  const startM = minStart % 60;
+  const endH = Math.floor(maxEnd / 60);
+  const endM = maxEnd % 60;
+
+  return {
+    dayOfWeek: days,
+    timeStart: `${pad2(startH)}:${pad2(startM)}`,
+    timeEnd: `${pad2(endH)}:${pad2(endM)}`,
+  };
+}
+
+async function syncSlots(
+  classLoadId: string,
+  teacherId: string,
+  schoolYearId: string,
+  title: string,
+  sectionName: string,
+  defaultRoom: string,
+  slots: SlotInput[],
+): Promise<void> {
+  const classLoadObjId = new mongoose.Types.ObjectId(classLoadId);
+  const teacherObjId = new mongoose.Types.ObjectId(teacherId);
+  const schoolYearObjId = new mongoose.Types.ObjectId(schoolYearId);
+
+  const existing = await Schedule.find({ classLoadId: classLoadObjId, teacherId: teacherObjId });
+  const existingById = new Map(existing.map((doc) => [doc._id.toString(), doc]));
+  const incomingIds = new Set(slots.filter((s) => s.id).map((s) => s.id as string));
+
+  for (const doc of existing) {
+    if (!incomingIds.has(doc._id.toString())) {
+      await doc.deleteOne();
+    }
+  }
+
+  for (const slot of slots) {
+    const { h: startH, m: startM } = parseHM(slot.timeStart);
+    const endMin = slotEndMinutes(slot);
+    const durMin = Math.max(30, endMin - (startH * 60 + startM));
+    const room = (slot.room ?? '').trim() || defaultRoom;
+
+    if (slot.id && existingById.has(slot.id)) {
+      const doc = existingById.get(slot.id)!;
+      doc.dayOfWeek = slot.dayOfWeek;
+      doc.startH = startH;
+      doc.startM = startM;
+      doc.durMin = durMin;
+      doc.room = room;
+      doc.title = title;
+      doc.section = sectionName;
+      doc.type = 'class';
+      doc.schoolYearId = schoolYearObjId;
+      await doc.save();
+    } else {
+      await Schedule.create({
+        teacherId: teacherObjId,
+        schoolYearId: schoolYearObjId,
+        classLoadId: classLoadObjId,
+        title,
+        section: sectionName,
+        room,
+        dayOfWeek: slot.dayOfWeek,
+        startH,
+        startM,
+        durMin,
+        type: 'class',
+      });
+    }
+  }
+}
+
+async function readSlots(classLoadId: string, teacherId: string): Promise<SlotOutput[]> {
+  const docs = await Schedule.find({
+    classLoadId: new mongoose.Types.ObjectId(classLoadId),
+    teacherId: new mongoose.Types.ObjectId(teacherId),
+  }).sort({ dayOfWeek: 1, startH: 1, startM: 1 });
+
+  return docs.map((doc) => {
+    const endTotal = doc.startH * 60 + doc.startM + doc.durMin;
+    const endH = Math.floor(endTotal / 60);
+    const endM = endTotal % 60;
+    return {
+      id: (doc._id as mongoose.Types.ObjectId).toString(),
+      dayOfWeek: doc.dayOfWeek,
+      timeStart: `${pad2(doc.startH)}:${pad2(doc.startM)}`,
+      timeEnd: `${pad2(endH)}:${pad2(endM)}`,
+      room: doc.room,
+    };
+  });
 }
 
 function formatScheduleTime(schedule: {
@@ -120,7 +264,8 @@ export const classLoadService = {
     });
 
     const item = toListItem(load as Parameters<typeof toListItem>[0], studentCount);
-    return { ...item, schedule: load.schedule };
+    const slots = await readSlots(id, teacherId);
+    return { ...item, schedule: load.schedule, slots };
   },
 
   async getStudents(classLoadId: string, teacherId: string) {
@@ -144,9 +289,19 @@ export const classLoadService = {
   },
 
   async update(id: string, teacherId: string, dto: UpdateClassLoadDto) {
+    const baseUpdate: Record<string, unknown> = {};
+    if (dto.roomNumber !== undefined) baseUpdate.roomNumber = dto.roomNumber;
+    if (dto.quarter !== undefined) baseUpdate.quarter = dto.quarter;
+    if (dto.weights !== undefined) baseUpdate.weights = dto.weights;
+    if (dto.slots !== undefined) {
+      baseUpdate.schedule = deriveEmbedded(dto.slots);
+    } else if (dto.schedule !== undefined) {
+      baseUpdate.schedule = dto.schedule;
+    }
+
     const load = await ClassLoad.findOneAndUpdate(
       { _id: id, teacherId, isActive: true },
-      { $set: dto },
+      { $set: baseUpdate },
       { new: true },
     )
       .populate('subjectId', 'name gradeLevel')
@@ -157,7 +312,21 @@ export const classLoadService = {
       throw Object.assign(new Error('Class load not found'), { statusCode: 404 });
     }
 
-    if (dto.schedule?.timeStart) {
+    const subject = load.subjectId as unknown as { name: string };
+    const section = load.sectionId as unknown as { name: string };
+    const defaultRoom = (dto.roomNumber ?? load.roomNumber ?? '').trim();
+
+    if (dto.slots !== undefined) {
+      await syncSlots(
+        id,
+        teacherId,
+        load.schoolYearId.toString(),
+        subject.name,
+        section.name,
+        defaultRoom,
+        dto.slots,
+      );
+    } else if (dto.schedule?.timeStart) {
       const [startH = 0, startM = 0] = dto.schedule.timeStart.split(':').map(Number);
       const [endH = 0, endM = 0] = (dto.schedule.timeEnd ?? '').split(':').map(Number);
       const durMin = Math.max(30, endH * 60 + endM - startH * 60 - startM);
@@ -174,7 +343,8 @@ export const classLoadService = {
     });
 
     const item = toListItem(load as Parameters<typeof toListItem>[0], studentCount);
-    return { ...item, schedule: load.schedule };
+    const slots = await readSlots(id, teacherId);
+    return { ...item, schedule: load.schedule, slots };
   },
 
   async create(teacherId: string, dto: CreateClassLoadDto) {
@@ -223,6 +393,10 @@ export const classLoadService = {
       });
     }
 
+    const embeddedSchedule = dto.slots?.length
+      ? deriveEmbedded(dto.slots)
+      : dto.schedule ?? { dayOfWeek: [], timeStart: '', timeEnd: '' };
+
     const load = await ClassLoad.create({
       teacherId,
       subjectId: subject._id,
@@ -230,18 +404,35 @@ export const classLoadService = {
       schoolYearId: activeYear._id,
       quarter: dto.quarter,
       roomNumber: dto.roomNumber ?? '',
-      schedule: dto.schedule ?? { dayOfWeek: [], timeStart: '', timeEnd: '' },
+      schedule: embeddedSchedule,
       weights: dto.weights,
     });
 
+    const classLoadId = (load._id as mongoose.Types.ObjectId).toString();
+
+    if (dto.slots?.length) {
+      await syncSlots(
+        classLoadId,
+        teacherId,
+        (activeYear._id as mongoose.Types.ObjectId).toString(),
+        subject.name,
+        section.name,
+        (dto.roomNumber ?? '').trim(),
+        dto.slots,
+      );
+    }
+
+    const slots = await readSlots(classLoadId, teacherId);
+
     return {
-      id: (load._id as mongoose.Types.ObjectId).toString(),
+      id: classLoadId,
       teacherId: load.teacherId.toString(),
       subjectId: (subject._id as mongoose.Types.ObjectId).toString(),
       sectionId: (section._id as mongoose.Types.ObjectId).toString(),
       schoolYearId: (activeYear._id as mongoose.Types.ObjectId).toString(),
       quarter: load.quarter,
       roomNumber: load.roomNumber,
+      scheduleTime: formatScheduleTime(load.schedule),
       wwWeight: load.weights.ww,
       ptWeight: load.weights.pt,
       qaWeight: load.weights.qa,
@@ -256,6 +447,8 @@ export const classLoadService = {
         gradeLevel: `Grade ${section.gradeLevel}`,
       },
       studentCount: 0,
+      schedule: load.schedule,
+      slots,
     };
   },
 };
