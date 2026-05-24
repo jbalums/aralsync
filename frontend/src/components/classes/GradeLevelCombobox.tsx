@@ -3,9 +3,11 @@ import { useState, useRef, useEffect } from "react";
 import { Icon } from "..";
 import { gradeLevels } from "../../data/phEducation";
 
+const JHS_SHS_LEVELS = gradeLevels.filter((g) => g.value >= 7);
+
 interface GradeLevelComboboxProps {
-	value: string;
-	onChange: (value: string) => void;
+	value: number;
+	onChange: (value: number) => void;
 }
 
 export function GradeLevelCombobox({ value, onChange }: GradeLevelComboboxProps) {
@@ -13,12 +15,12 @@ export function GradeLevelCombobox({ value, onChange }: GradeLevelComboboxProps)
 	const [query, setQuery] = useState("");
 	const ref = useRef(null);
 
-	const selected = gradeLevels.find((g) => g.value === value);
+	const selected = JHS_SHS_LEVELS.find((g) => g.value === value);
 	const filtered = query.trim()
-		? gradeLevels.filter((g) =>
+		? JHS_SHS_LEVELS.filter((g) =>
 				g.label.toLowerCase().includes(query.toLowerCase()),
 			)
-		: gradeLevels;
+		: JHS_SHS_LEVELS;
 
 	useEffect(() => {
 		if (!open) return;
@@ -53,7 +55,7 @@ export function GradeLevelCombobox({ value, onChange }: GradeLevelComboboxProps)
 				<Icon
 					name="chevron-down"
 					size={14}
-					className={`text-muted flex-shrink-0 tx ${open ? "rotate-180" : ""}`}
+					className={`text-muted shrink-0 tx ${open ? "rotate-180" : ""}`}
 				/>
 			</div>
 			{open && (

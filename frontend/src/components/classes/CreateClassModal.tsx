@@ -19,7 +19,7 @@ import { SubjectCombobox } from "./SubjectCombobox";
 const createSchema = z
 	.object({
 		subjectName: z.string().min(1, "Subject name is required"),
-		gradeLevel: z.string().min(1, "Grade level is required"),
+		gradeLevel: z.number().int().min(1, "Grade level is required"),
 		sectionName: z.string().min(1, "Section name is required"),
 		quarter: z.enum(["Q1", "Q2", "Q3", "Q4"]),
 		roomNumber: z.string().default(""),
@@ -57,7 +57,7 @@ export function CreateClassModal({ open, onClose }: CreateClassModalProps) {
 			ptPct: 60,
 			qaPct: 20,
 			quarter: "Q1",
-			gradeLevel: "grade-7",
+			gradeLevel: 7,
 		},
 	});
 
@@ -66,7 +66,7 @@ export function CreateClassModal({ open, onClose }: CreateClassModalProps) {
 
 	const selectedGradeId = watch("gradeLevel");
 	const subjectNameValue = watch("subjectName") ?? "";
-	const selectedGradeLevel = gradeLevels.find((g) => g.id === selectedGradeId);
+	const selectedGradeLevel = gradeLevels.find((g) => g.value === selectedGradeId);
 	const suggestedSubjects = selectedGradeLevel?.subjects ?? [];
 
 	const handleClose = () => {

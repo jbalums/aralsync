@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import {
 	Card,
@@ -32,12 +32,20 @@ export function PageClasses() {
 
 	const { data: classLoads = [], isLoading } = useClassLoads();
 
-	const filtered = classLoads.filter((c) => {
-		if (gradeFilter === "all") return true;
-		return c.section.gradeLevel.includes(
-			gradeFilter.replace("g", "Grade "),
-		);
-	});
+	const uniqueGrades = useMemo(
+		() => [...new Set(classLoads.map((c) => c.section.gradeLevel))].sort(),
+		[classLoads],
+	);
+
+	useEffect(() => {
+		if (gradeFilter !== "all" && !uniqueGrades.includes(gradeFilter)) {
+			setGradeFilter("all");
+		}
+	}, [uniqueGrades, gradeFilter]);
+
+	const filtered = classLoads.filter((c) =>
+		gradeFilter === "all" ? true : c.section.gradeLevel === gradeFilter,
+	);
 
 	return (
 		<div className="page-anim space-y-5">
@@ -68,7 +76,7 @@ export function PageClasses() {
 				</div>
 
 				<div className="mt-4 flex items-center gap-2 flex-wrap">
-					{["all", "g7", "g8", "g9", "g10"].map((f) => (
+					{["all", ...uniqueGrades].map((f) => (
 						<button
 							key={f}
 							onClick={() => setGradeFilter(f)}
@@ -78,7 +86,7 @@ export function PageClasses() {
 									: "bg-white text-navy border border-line hover:bg-surface"
 							}`}
 						>
-							{f === "all" ? "All" : `Grade ${f.slice(1)}`}
+							{f === "all" ? "All" : f}
 						</button>
 					))}
 					<span className="ml-auto text-[12px] text-muted">
