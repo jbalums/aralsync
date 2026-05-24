@@ -20,6 +20,7 @@ import { gradeEntryRouter } from "./modules/gradeEntries/gradeEntry.routes";
 import { quarterlyGradeRouter } from "./modules/quarterlyGrades/quarterlyGrade.routes";
 import { scheduleRouter } from "./modules/schedules/schedule.routes";
 import { syncRouter } from "./modules/sync/sync.routes";
+import { dashboardRouter } from "./modules/dashboard/dashboard.routes";
 
 const app = express();
 const PORT = process.env.PORT ?? 5000;
@@ -41,6 +42,7 @@ app.use("/api/v1/grade-entries", gradeEntryRouter);
 app.use("/api/v1/quarterly-grades", quarterlyGradeRouter);
 app.use("/api/v1/schedules", scheduleRouter);
 app.use("/api/v1/sync", syncRouter);
+app.use("/api/v1/dashboard", dashboardRouter);
 
 app.use((_req, res) => {
 	res.status(404).json({ success: false, message: "Route not found" });
