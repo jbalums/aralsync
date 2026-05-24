@@ -506,7 +506,12 @@ export function ConnPill({ online }) {
 }
 
 // AralSync wordmark
-export function Logo({ size = 18, withTag = false, className = "", iconOnly = false }) {
+export function Logo({
+	size = 18,
+	withTag = false,
+	className = "",
+	iconOnly = false,
+}) {
 	const logoHeight = size + 12;
 	return (
 		<div className={`flex items-center gap-2 ${className}`}>
@@ -514,14 +519,18 @@ export function Logo({ size = 18, withTag = false, className = "", iconOnly = fa
 				<img
 					src="/icon.png"
 					alt="AralSync"
-					style={{ height: logoHeight, width: logoHeight, objectFit: 'contain' }}
+					style={{
+						height: logoHeight,
+						width: logoHeight,
+						objectFit: "contain",
+					}}
 					draggable={false}
 				/>
 			) : (
 				<img
 					src="/logo.png"
 					alt="AralSync"
-					style={{ height: logoHeight, objectFit: 'contain' }}
+					style={{ height: logoHeight, objectFit: "contain" }}
 					draggable={false}
 				/>
 			)}
@@ -825,6 +834,9 @@ export function Dropdown({ trigger, items, align = "right" }) {
 					className={`absolute top-full mt-1.5 ${align === "right" ? "right-0" : "left-0"} min-w-[180px] bg-white border border-line rounded-md shadow-lg py-1 z-30 modal-anim`}
 				>
 					{items.map((it, i) => {
+						if (it.render) {
+							return it.render();
+						}
 						if (it.separator)
 							return (
 								<div

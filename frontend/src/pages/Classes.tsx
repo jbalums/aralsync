@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -49,6 +49,172 @@ const SUBJECT_HUE: Record<string, string> = {
 };
 function subjectHue(name: string) {
 	return SUBJECT_HUE[name] ?? "linear-gradient(90deg,#64748B,#475569)";
+}
+
+// ─── Searchable grade level combobox ─────────────────────
+function GradeLevelCombobox({ value, onChange }) {
+	const [open, setOpen] = useState(false);
+	const [query, setQuery] = useState("");
+	const ref = useRef(null);
+
+	const selected = gradeLevels.find((g) => g.id === value);
+	const filtered = query.trim()
+		? gradeLevels.filter((g) =>
+				g.label.toLowerCase().includes(query.toLowerCase()),
+			)
+		: gradeLevels;
+
+	useEffect(() => {
+		if (!open) return;
+		const onMouse = (e) => {
+			if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+		};
+		const onKey = (e) => {
+			if (e.key === "Escape") setOpen(false);
+		};
+		document.addEventListener("mousedown", onMouse);
+		document.addEventListener("keydown", onKey);
+		return () => {
+			document.removeEventListener("mousedown", onMouse);
+			document.removeEventListener("keydown", onKey);
+		};
+	}, [open]);
+
+	return (
+		<div className="relative" ref={ref}>
+			<div
+				className="w-full h-9 px-3 text-[13px] rounded-md border border-line bg-white hover:border-slate-300 tx flex items-center gap-2 cursor-pointer select-none"
+				onClick={() => {
+					setOpen((o) => !o);
+					setQuery("");
+				}}
+			>
+				<span
+					className={`flex-1 truncate ${selected ? "text-navy" : "text-muted-light"}`}
+				>
+					{selected ? selected.label : "Select grade level"}
+				</span>
+				<Icon
+					name="chevron-down"
+					size={14}
+					className={`text-muted flex-shrink-0 tx ${open ? "rotate-180" : ""}`}
+				/>
+			</div>
+			{open && (
+				<div className="absolute z-50 w-full mt-1 bg-white border border-line rounded-md shadow-lg overflow-hidden">
+					<div className="p-2 border-b border-line">
+						<input
+							autoFocus
+							value={query}
+							onChange={(e) => setQuery(e.target.value)}
+							placeholder="Search grade levels…"
+							className="w-full h-8 px-2.5 text-[12px] rounded border border-line focus:border-primary focus:outline-none"
+						/>
+					</div>
+					<div className="max-h-52 overflow-y-auto">
+						{filtered.length === 0 ? (
+							<div className="px-3 py-3 text-[12px] text-muted text-center">
+								No results
+							</div>
+						) : (
+							filtered.map((g) => (
+								<button
+									key={g.id}
+									type="button"
+									onClick={() => {
+										onChange(g.value);
+										setOpen(false);
+										setQuery("");
+									}}
+									className={`w-full text-left px-3 py-2 text-[13px] hover:bg-surface flex items-center justify-between gap-2 ${
+										value === g.id
+											? "bg-primary-light text-primary-dark font-semibold"
+											: "text-navy"
+									}`}
+								>
+									{g.label}
+									{value === g.id && (
+										<Icon name="check" size={13} />
+									)}
+								</button>
+							))
+						)}
+					</div>
+				</div>
+			)}
+		</div>
+	);
+}
+
+// ─── Subject name autocomplete combobox ──────────────────
+function SubjectCombobox({ value, onChange, subjects, placeholder }) {
+	const [open, setOpen] = useState(false);
+	const ref = useRef(null);
+
+	const filtered = subjects.length
+		? value.trim()
+			? subjects.filter((s) =>
+					s.toLowerCase().includes(value.toLowerCase()),
+				)
+			: subjects
+		: [];
+
+	useEffect(() => {
+		if (!open) return;
+		const onMouse = (e) => {
+			if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+		};
+		const onKey = (e) => {
+			if (e.key === "Escape") setOpen(false);
+		};
+		document.addEventListener("mousedown", onMouse);
+		document.addEventListener("keydown", onKey);
+		return () => {
+			document.removeEventListener("mousedown", onMouse);
+			document.removeEventListener("keydown", onKey);
+		};
+	}, [open]);
+
+	return (
+		<div className="relative" ref={ref}>
+			<input
+				value={value}
+				onChange={(e) => {
+					onChange(e.target.value);
+					if (subjects.length > 0) setOpen(true);
+				}}
+				onFocus={() => {
+					if (subjects.length > 0) setOpen(true);
+				}}
+				placeholder={placeholder}
+				className="w-full h-9 px-3 text-[13px] rounded-md border border-line bg-white focus:border-primary focus:outline-none tx placeholder:text-muted-light"
+			/>
+			{open && filtered.length > 0 && (
+				<div className="absolute z-50 w-full mt-1 bg-white border border-line rounded-md shadow-lg overflow-hidden">
+					<div className="max-h-52 overflow-y-auto">
+						{filtered.map((s) => (
+							<button
+								key={s}
+								type="button"
+								onClick={() => {
+									onChange(s);
+									setOpen(false);
+								}}
+								className={`w-full text-left px-3 py-2 text-[13px] hover:bg-surface flex items-center justify-between gap-2 ${
+									value === s
+										? "bg-primary-light text-primary-dark font-semibold"
+										: "text-navy"
+								}`}
+							>
+								{s}
+								{value === s && <Icon name="check" size={13} />}
+							</button>
+						))}
+					</div>
+				</div>
+			)}
+		</div>
+	);
 }
 
 // ─── Create class form schema ─────────────────────────────
@@ -102,7 +268,10 @@ export function PageClasses() {
 	const weightSum = (ww ?? 0) + (pt ?? 0) + (qa ?? 0);
 
 	const selectedGradeId = watch("gradeLevel");
-	const selectedGradeLevel = gradeLevels.find((g) => g.id === selectedGradeId);
+	const subjectNameValue = watch("subjectName") ?? "";
+	const selectedGradeLevel = gradeLevels.find(
+		(g) => g.id === selectedGradeId,
+	);
 	const suggestedSubjects = selectedGradeLevel?.subjects ?? [];
 
 	const onCreateSubmit = async (values: CreateFormValues) => {
@@ -271,47 +440,18 @@ export function PageClasses() {
 				<form className="grid grid-cols-2 gap-3" noValidate>
 					<div>
 						<Field
-							label="Subject name"
-							required
-							error={errors.subjectName?.message}
-						>
-							<TextInput
-								placeholder="e.g. Science"
-								{...register("subjectName")}
-							/>
-						</Field>
-						{suggestedSubjects.length > 0 && (
-							<div className="flex flex-wrap gap-1 mt-1.5">
-								{suggestedSubjects.map((s) => (
-									<button
-										key={s}
-										type="button"
-										onClick={() =>
-											setValue("subjectName", s, {
-												shouldValidate: true,
-											})
-										}
-										className="text-[11px] px-2 py-0.5 rounded-full border border-slate-200 bg-slate-50 hover:bg-primary/10 hover:border-primary/40 transition-colors text-slate-700 cursor-pointer"
-									>
-										{s}
-									</button>
-								))}
-							</div>
-						)}
-					</div>
-					<div>
-						<Field
 							label="Grade level"
 							required
 							error={errors.gradeLevel?.message}
 						>
-							<Select {...register("gradeLevel")}>
-								{gradeLevels.map((g) => (
-									<option key={g.id} value={g.id}>
-										{g.label}
-									</option>
-								))}
-							</Select>
+							<GradeLevelCombobox
+								value={selectedGradeId}
+								onChange={(id) =>
+									setValue("gradeLevel", id, {
+										shouldValidate: true,
+									})
+								}
+							/>
 						</Field>
 						{selectedGradeLevel && (
 							<p className="text-[11px] text-muted mt-1 leading-snug">
@@ -319,6 +459,23 @@ export function PageClasses() {
 							</p>
 						)}
 					</div>
+					<Field
+						label="Subject name"
+						required
+						error={errors.subjectName?.message}
+					>
+						<SubjectCombobox
+							value={subjectNameValue}
+							onChange={(v) =>
+								setValue("subjectName", v, {
+									shouldValidate: true,
+								})
+							}
+							subjects={suggestedSubjects}
+							placeholder="e.g. Science"
+						/>
+					</Field>
+
 					<Field
 						label="Section name"
 						required
