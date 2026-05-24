@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"systemMessage\": \"⚠ Reminder: if you modified any files this turn, your response must end with:\\ngit add <files>\\ngit commit -m \\\"type: description\\\"\"}'"
+          }
+        ]
+      }
+    ]
+  }
+}
