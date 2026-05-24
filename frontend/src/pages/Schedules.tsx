@@ -184,7 +184,7 @@ export function PageSchedules() {
   };
 
   const editorOpen = !!(editing || newDraft);
-  const editorInitial = editing ?? (newDraft ? { ...newDraft } : null);
+  const editorInitial = editing ?? newDraft;
 
   return (
     <div className="page-anim space-y-5">
