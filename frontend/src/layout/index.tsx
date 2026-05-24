@@ -1,8 +1,11 @@
 // @ts-nocheck
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Icon, Logo, Avatar, Dropdown, ConnPill } from "../components";
 import { useSyncStore } from "../modules/sync/syncStore";
 import { useAuthStore } from "../modules/auth/authStore";
+import { db } from "../db";
+import type { School } from "../shared/types";
+import { schoolsService } from "../modules/classrooms/schools.service";
 
 // ─── APP SHELL: SIDEBAR + TOPBAR + MOBILE NAV ────────────
 
@@ -66,6 +69,21 @@ export function Sidebar({ route, setRoute, online, onClose = () => {} }) {
 		user?.role === "super_admin" || user?.role === "school_admin";
 	const queueCount = useSyncStore((s) => s.queueCount);
 	const lastSyncAt = useSyncStore((s) => s.lastSyncAt);
+	const [school, setSchool] = useState<School | null>(null);
+	useEffect(() => {
+		if (!user?.schoolId) { setSchool(null); return; }
+		db.schools.get(user.schoolId).then(async (cached) => {
+			if (cached) { setSchool(cached); return; }
+			if (!online) return;
+			try {
+				const remote = await schoolsService.getById(user.schoolId);
+				await db.schools.put(remote);
+				setSchool(remote);
+			} catch {
+				// silently ignore — school block stays hidden
+			}
+		});
+	}, [user?.schoolId, online]);
 	const lastSyncLabel = lastSyncAt
 		? new Date(lastSyncAt).toLocaleTimeString()
 		: "Never";
@@ -96,6 +114,24 @@ export function Sidebar({ route, setRoute, online, onClose = () => {} }) {
 					</button>
 				)}
 			</div>
+
+			{school && (
+				<div className="px-4 py-2.5 border-b border-line bg-surface/50">
+					<div className="flex items-center gap-2 min-w-0">
+						<Icon
+							name="school"
+							size={14}
+							className="text-primary shrink-0"
+						/>
+						<span className="text-[13px] font-semibold text-navy truncate">
+							{school.name}
+						</span>
+					</div>
+					<p className="text-[11px] text-muted mt-0.5 truncate pl-5.5">
+						{school.division}
+					</p>
+				</div>
+			)}
 
 			<div className="flex-1 overflow-y-auto py-3 px-3">
 				{NAV_GROUPS.filter((g) => !g.adminOnly || isAdmin).map(
