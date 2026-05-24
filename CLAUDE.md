@@ -109,7 +109,7 @@ const HONOR_THRESHOLDS = {
 ```
 Teacher (User)
   └── School
-        └── School Year (e.g. 2024–2025)
+        └── School Year (e.g. 2026)
               └── Subject (e.g. Science)
                     └── Section (e.g. Grade 7 – Rizal)
                           └── Student

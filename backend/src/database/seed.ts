@@ -44,7 +44,7 @@ async function seed(): Promise<void> {
 	// ── 2. School Year ─────────────────────────────────────────────────────────
 	const schoolYear = await SchoolYear.create({
 		schoolId: school._id,
-		label: "2024–2025",
+		label: "2026",
 		startDate: new Date("2024-08-05"),
 		endDate: new Date("2025-04-04"),
 		isActive: true,

@@ -62,11 +62,14 @@ export function CreateClassModal({ open, onClose }: CreateClassModalProps) {
 	});
 
 	const [ww, pt, qa] = watch(["wwPct", "ptPct", "qaPct"]);
-	const weightSum = (ww ?? 0) + (pt ?? 0) + (qa ?? 0);
+	const weightSum =
+		(parseFloat(ww) ?? 0) + (parseFloat(pt) ?? 0) + (parseFloat(qa) ?? 0);
 
 	const selectedGradeId = watch("gradeLevel");
 	const subjectNameValue = watch("subjectName") ?? "";
-	const selectedGradeLevel = gradeLevels.find((g) => g.value === selectedGradeId);
+	const selectedGradeLevel = gradeLevels.find(
+		(g) => g.value === selectedGradeId,
+	);
 	const suggestedSubjects = selectedGradeLevel?.subjects ?? [];
 
 	const handleClose = () => {
@@ -140,7 +143,9 @@ export function CreateClassModal({ open, onClose }: CreateClassModalProps) {
 						<GradeLevelCombobox
 							value={selectedGradeId}
 							onChange={(value) =>
-								setValue("gradeLevel", value, { shouldValidate: true })
+								setValue("gradeLevel", value, {
+									shouldValidate: true,
+								})
 							}
 						/>
 					</Field>
