@@ -17,6 +17,7 @@ import {
   useCreateStudent,
   useImportStudents,
   useUpdateStudent,
+  useDeleteStudent,
 } from '../modules/students/useStudents';
 import { useClassLoads } from '../modules/classrooms/useClassLoads';
 import { validateLRN } from '../shared/utils/lrn';
@@ -628,6 +629,69 @@ function EditStudentModal({ open, onClose, student, onSuccess }: EditStudentModa
   );
 }
 
+// ─── Delete-student modal ─────────────────────────────────
+
+interface DeleteStudentModalProps {
+  open: boolean;
+  onClose: () => void;
+  student: Student;
+  onSuccess: () => void;
+}
+
+function DeleteStudentModal({ open, onClose, student, onSuccess }: DeleteStudentModalProps) {
+  const deleteMutation = useDeleteStudent();
+  const [input, setInput] = useState('');
+
+  const expectedName = `${student.firstName} ${student.lastName}`;
+  const confirmed = input.trim() === expectedName;
+
+  const handleDelete = async () => {
+    await deleteMutation.mutateAsync(student.id);
+    onSuccess();
+  };
+
+  React.useEffect(() => {
+    if (open) setInput('');
+  }, [open]);
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Delete student"
+      subtitle="This action cannot be undone"
+      width="max-w-md"
+      footer={<>
+        <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
+        <Btn variant="danger" icon="trash-2"
+          onClick={() => { void handleDelete(); }}
+          disabled={!confirmed || deleteMutation.isPending}
+        >
+          {deleteMutation.isPending ? 'Deleting…' : 'Delete permanently'}
+        </Btn>
+      </>}
+    >
+      <div className="space-y-4">
+        <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-[13px] text-red-700">
+          <strong>{student.lastName}, {student.firstName}</strong> will be removed from
+          all classes. Attendance and grade records are preserved but the student
+          will no longer appear in any list.
+        </div>
+        <div>
+          <label className="text-[13px] font-medium text-navy block mb-1.5">
+            Type <span className="font-mono bg-slate-100 px-1 rounded">{expectedName}</span> to confirm
+          </label>
+          <TextInput
+            value={input}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
+            placeholder={expectedName}
+          />
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 // ─── STUDENT PROFILE ─────────────────────────────────────
 
 export function PageStudentProfile() {
@@ -636,6 +700,7 @@ export function PageStudentProfile() {
   const { studentId } = useParams({ strict: false }) as { studentId: string };
   const [tab, setTab] = useState('overview');
   const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const { data: student, isLoading } = useStudent(studentId);
   const { data: summary } = useStudentAttendanceSummary(studentId);
@@ -690,6 +755,7 @@ export function PageStudentProfile() {
           </div>
           <div className="flex items-center gap-2">
             <Btn variant="secondary" size="sm" icon="pencil" onClick={() => setEditOpen(true)}>Edit</Btn>
+            <Btn variant="danger" size="sm" icon="trash-2" onClick={() => setDeleteOpen(true)}>Delete</Btn>
           </div>
         </div>
       </Card>
@@ -766,6 +832,15 @@ export function PageStudentProfile() {
         onClose={() => setEditOpen(false)}
         student={student}
         onSuccess={() => toast?.push({ type: 'success', title: 'Student updated', message: 'Changes saved.' })}
+      />
+      <DeleteStudentModal
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        student={student}
+        onSuccess={() => {
+          toast?.push({ type: 'success', title: 'Student deleted' });
+          void navigate({ to: '/app/students' });
+        }}
       />
     </div>
   );

@@ -160,6 +160,17 @@ export const studentService = {
     return toClientStudent(student.toObject());
   },
 
+  async deactivate(studentId: string, teacherId: string): Promise<boolean> {
+    const loads = await ClassLoad.find({ teacherId, isActive: true }, 'sectionId').lean();
+    const sectionIds = loads.map((l) => l.sectionId);
+
+    const student = await Student.findOne({ _id: studentId, sectionId: { $in: sectionIds }, isActive: true });
+    if (!student) throw Object.assign(new Error('Student not found or access denied'), { statusCode: 404 });
+
+    await Student.findByIdAndUpdate(studentId, { isActive: false });
+    return true;
+  },
+
   async transfer(studentId: string, targetClassLoadId: string, teacherId: string) {
     const targetLoad = await ClassLoad.findOne({ _id: targetClassLoadId, isActive: true }).lean();
     if (!targetLoad) throw Object.assign(new Error('Target class load not found'), { statusCode: 404 });

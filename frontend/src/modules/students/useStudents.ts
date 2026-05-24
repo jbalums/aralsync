@@ -73,6 +73,16 @@ export function useUpdateStudent() {
   });
 }
 
+export function useDeleteStudent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => studentsService.delete(id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: STUDENT_KEYS.all });
+    },
+  });
+}
+
 export function useImportStudents() {
   const qc = useQueryClient();
   return useMutation({

@@ -22,6 +22,7 @@ router.post('/import',                             validateBody(importStudentsSc
 router.get('/lrn/:lrn',                            validateParams(lrnParamSchema),         studentController.getByLRN);
 router.get('/:id',                                 validateParams(studentIdParamSchema),   studentController.getById);
 router.put('/:id',                                 validateParams(studentIdParamSchema),   validateBody(updateStudentSchema), studentController.update);
+router.delete('/:id',                              validateParams(studentIdParamSchema),   studentController.remove);
 router.post('/:id/transfer',                       validateParams(studentIdParamSchema),   validateBody(transferStudentSchema), studentController.transfer);
 router.get('/:id/attendance-summary',              validateParams(studentIdParamSchema),   studentController.getAttendanceSummary);
 

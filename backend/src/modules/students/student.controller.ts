@@ -75,6 +75,15 @@ export const studentController = {
     }
   },
 
+  async remove(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      await studentService.deactivate(req.params.id as string, req.user!.userId);
+      success(res, { deleted: true });
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async transfer(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const student = await studentService.transfer(

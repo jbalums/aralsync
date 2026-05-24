@@ -107,4 +107,8 @@ export const studentsService = {
     const res = await http.get<{ data: AttendanceSummary }>(`/students/${id}/attendance-summary`);
     return res.data.data;
   },
+
+  async delete(id: string): Promise<void> {
+    await http.delete(`/students/${id}`);
+  },
 };
