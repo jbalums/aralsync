@@ -129,6 +129,33 @@ export const schoolService = {
   },
 
 
+  async getById(id: string) {
+    const school = await School.findById(id).lean();
+    if (!school) {
+      throw Object.assign(new Error('School not found'), { statusCode: 404 });
+    }
+    return {
+      id:       (school._id as mongoose.Types.ObjectId).toString(),
+      name:     school.name,
+      schoolId: school.schoolId,
+      division: school.division,
+      district: school.district ?? '',
+      address:  school.address ?? '',
+      isActive: school.isActive,
+    };
+  },
+
+  async updateInfo(
+    id: string,
+    data: { division?: string; district?: string; address?: string },
+  ) {
+    const school = await School.findByIdAndUpdate(id, { $set: data }, { new: true });
+    if (!school) {
+      throw Object.assign(new Error('School not found'), { statusCode: 404 });
+    }
+    return mapSchool(school);
+  },
+
   async getYears(schoolObjectId: string) {
     const years = await SchoolYear.find({ schoolId: schoolObjectId })
       .sort({ startDate: -1 })

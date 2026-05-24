@@ -7,6 +7,7 @@ export interface IUserDocument extends Document {
   fullName: string;
   employeeNumber: string;
   position: string;
+  avatarUrl: string;
   schoolId?: mongoose.Types.ObjectId;
   role: Role;
   deviceIds: string[];
@@ -20,7 +21,8 @@ const userSchema = new Schema<IUserDocument>(
     passwordHash: { type: String, required: true },
     fullName: { type: String, required: true, trim: true },
     employeeNumber: { type: String, trim: true, default: '' },
-    position: { type: String, trim: true, default: '' },
+    position:       { type: String, trim: true, default: '' },
+    avatarUrl:      { type: String, default: '' },
     schoolId: { type: Schema.Types.ObjectId, ref: 'School', required: false },
     role: { type: String, enum: Object.values(Role), required: true },
     deviceIds: [{ type: String }],

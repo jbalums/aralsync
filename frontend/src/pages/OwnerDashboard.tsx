@@ -28,7 +28,8 @@ type SchoolFormValues = z.infer<typeof schoolSchema>;
 
 export function PageOwnerDashboard() {
   const user = useAuthStore((s) => s.user);
-  const { push } = useToast();
+  const _toast = useToast() as { push: (t: { type: string; title?: string; message?: string }) => void } | null;
+  const push = _toast?.push.bind(_toast) ?? (() => {});
   const qc = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -349,7 +350,8 @@ function parseCSVString(text: string): { rows: ParsedRow[]; error: string } {
 }
 
 function ImportSchoolsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { push } = useToast();
+  const _toast = useToast() as { push: (t: { type: string; title?: string; message?: string }) => void } | null;
+  const push = _toast?.push.bind(_toast) ?? (() => {});
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
 

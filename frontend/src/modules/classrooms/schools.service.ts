@@ -45,6 +45,19 @@ export const schoolsService = {
     return res.data.data;
   },
 
+  async getById(id: string): Promise<School> {
+    const res = await http.get<{ data: School }>(`/schools/${id}`);
+    return res.data.data;
+  },
+
+  async updateInfo(
+    id: string,
+    data: { division?: string; district?: string; address?: string },
+  ): Promise<School> {
+    const res = await http.patch<{ data: School }>(`/schools/${id}/info`, data);
+    return res.data.data;
+  },
+
   async createSchool(payload: CreateSchoolPayload): Promise<School> {
     const res = await http.post<{ data: School }>('/schools', payload);
     return res.data.data;

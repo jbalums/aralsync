@@ -26,6 +26,12 @@ export function Icon({
 	size = 18,
 	strokeWidth = 1.75,
 	style,
+}: {
+	name: string;
+	className?: string;
+	size?: number;
+	strokeWidth?: number;
+	style?: React.CSSProperties;
 }) {
 	const Component = LucideIcons[lucideName(name)] || LucideIcons.Square;
 	return (
@@ -67,13 +73,32 @@ export function Avatar({
 	size = "md",
 	square = false,
 	className = "",
+	src = "",
+}: {
+	name?: string;
+	size?: keyof typeof AVATAR_SIZES;
+	square?: boolean;
+	className?: string;
+	src?: string;
 }) {
 	const px = AVATAR_SIZES[size] || 40;
 	const pal = AVATAR_PALETTE[hashStr(name) % AVATAR_PALETTE.length];
 	const fontPx = Math.max(11, Math.round(px * 0.4));
+	const shape = square ? "rounded-md" : "rounded-full";
+	if (src) {
+		return (
+			<img
+				src={src}
+				alt={name}
+				className={`inline-block object-cover ${shape} ${className}`}
+				style={{ width: px, height: px }}
+				onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+			/>
+		);
+	}
 	return (
 		<span
-			className={`inline-flex items-center justify-center font-semibold ${square ? "rounded-md" : "rounded-full"} ${className}`}
+			className={`inline-flex items-center justify-center font-semibold ${shape} ${className}`}
 			style={{
 				width: px,
 				height: px,
@@ -185,6 +210,14 @@ export function Modal({
 	children,
 	footer,
 	width = "max-w-lg",
+}: {
+	open: boolean;
+	onClose: () => void;
+	title: React.ReactNode;
+	subtitle?: React.ReactNode;
+	children?: React.ReactNode;
+	footer?: React.ReactNode;
+	width?: string;
 }) {
 	useEffect(() => {
 		if (!open) return;
@@ -384,6 +417,13 @@ export function StatCard({
 	trend,
 	color = "primary",
 	sub,
+}: {
+	icon: string;
+	label: string;
+	value: React.ReactNode;
+	trend?: string;
+	color?: string;
+	sub?: React.ReactNode;
 }) {
 	const palette = {
 		primary: { bg: "#CCFBF1", fg: "#0F766E" },
@@ -752,7 +792,11 @@ export function studentStatus(att, grade) {
 }
 
 // Section header
-export function SectionHeader({ title, subtitle, right }) {
+export function SectionHeader({ title, subtitle, right }: {
+	title: React.ReactNode;
+	subtitle?: React.ReactNode;
+	right?: React.ReactNode;
+}) {
 	return (
 		<div className="flex items-end justify-between gap-3 flex-wrap mb-4">
 			<div>
@@ -777,6 +821,14 @@ export function Btn({
 	iconRight,
 	className = "",
 	...rest
+}: {
+	children?: React.ReactNode;
+	variant?: string;
+	size?: string;
+	icon?: string;
+	iconRight?: string;
+	className?: string;
+	[key: string]: any;
 }) {
 	const sizes = {
 		sm: "h-8 px-3 text-[12px] gap-1.5",
@@ -907,7 +959,12 @@ export function Tabs({ tabs, active, onChange, className = "" }) {
 }
 
 // Switch
-export function Switch({ value, onChange, label, hint }) {
+export function Switch({ value, onChange, label, hint }: {
+	value: boolean;
+	onChange: (v: boolean) => void;
+	label: React.ReactNode;
+	hint?: string;
+}) {
 	return (
 		<label className="flex items-start justify-between gap-3 py-2 cursor-pointer">
 			<div className="min-w-0">
@@ -933,15 +990,23 @@ export function Switch({ value, onChange, label, hint }) {
 }
 
 // Field group
-export function Field({ label, hint, children, required }) {
+export function Field({ label, hint, children, required, error, className }: {
+	label: React.ReactNode;
+	hint?: string;
+	children: React.ReactNode;
+	required?: boolean;
+	error?: string;
+	className?: string;
+}) {
 	return (
-		<label className="block">
+		<label className={`block ${className ?? ""}`}>
 			<div className="text-[12px] font-semibold text-navy mb-1.5">
 				{label}
 				{required && <span className="text-rose-500 ml-0.5">*</span>}
 			</div>
 			{children}
-			{hint && <div className="text-[11px] text-muted mt-1">{hint}</div>}
+			{error  && <div className="text-[11px] text-rose-500 mt-1">{error}</div>}
+			{hint   && <div className="text-[11px] text-muted mt-1">{hint}</div>}
 		</label>
 	);
 }

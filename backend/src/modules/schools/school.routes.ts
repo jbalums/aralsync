@@ -6,6 +6,7 @@ import {
   createSchoolYearSchema,
   createSchoolSchema,
   updateSchoolSchema,
+  updateSchoolInfoSchema,
   bulkCreateSchoolsSchema,
   schoolIdParamSchema,
   yearIdParamSchema,
@@ -15,6 +16,10 @@ import { Role } from '../../shared/types';
 const router = Router();
 
 router.use(authenticate);
+
+// All authenticated users — read/update own school
+router.get('/:id', validateParams(schoolIdParamSchema), schoolController.getById);
+router.patch('/:id/info', validateParams(schoolIdParamSchema), validateBody(updateSchoolInfoSchema), schoolController.updateInfo);
 
 // Super-admin school management
 router.get('/', authorize(Role.SUPER_ADMIN), schoolController.listAll);

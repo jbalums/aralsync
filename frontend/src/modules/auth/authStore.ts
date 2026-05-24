@@ -8,6 +8,7 @@ interface AuthState {
   isHydrated: boolean;
   setAuth: (user: User, accessToken: string, refreshToken: string) => Promise<void>;
   setToken: (token: string) => void;
+  updateUser: (fields: Partial<User>) => Promise<void>;
   clearAuth: () => Promise<void>;
   setHydrated: () => void;
 }
@@ -23,6 +24,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   setToken: (accessToken) => set({ accessToken }),
+
+  updateUser: async (fields) => {
+    const userId = useAuthStore.getState().user?.id;
+    if (userId) await db.users.update(userId, fields);
+    set((s) => ({ user: s.user ? { ...s.user, ...fields } : null }));
+  },
 
   clearAuth: async () => {
     const userId = useAuthStore.getState().user?.id;

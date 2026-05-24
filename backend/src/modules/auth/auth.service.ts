@@ -27,11 +27,14 @@ function issueTokens(
 
 function toClientUser(user: IUserDocument, deviceId: string) {
   return {
-    id: (user._id as mongoose.Types.ObjectId).toString(),
-    email: user.email,
-    name: user.fullName,
-    schoolId: user.schoolId?.toString() ?? '',
-    role: user.role,
+    id:             (user._id as mongoose.Types.ObjectId).toString(),
+    email:          user.email,
+    name:           user.fullName,
+    employeeNumber: user.employeeNumber ?? '',
+    position:       user.position ?? '',
+    avatarUrl:      user.avatarUrl ?? '',
+    schoolId:       user.schoolId?.toString() ?? '',
+    role:           user.role,
     deviceId,
   };
 }
@@ -170,6 +173,23 @@ export const authService = {
       throw Object.assign(new Error('User not found'), { statusCode: 404 });
     }
     // deviceId not critical for /me — return first device
+    return toClientUser(user, user.deviceIds[0] ?? '');
+  },
+
+  async updateProfile(
+    userId: string,
+    data: { name?: string; employeeNumber?: string; position?: string; avatarUrl?: string },
+  ) {
+    const update: Record<string, string> = {};
+    if (data.name           !== undefined) update.fullName       = data.name;
+    if (data.employeeNumber !== undefined) update.employeeNumber = data.employeeNumber;
+    if (data.position       !== undefined) update.position       = data.position;
+    if (data.avatarUrl      !== undefined) update.avatarUrl      = data.avatarUrl;
+
+    const user = await User.findByIdAndUpdate(userId, { $set: update }, { new: true });
+    if (!user) {
+      throw Object.assign(new Error('User not found'), { statusCode: 404 });
+    }
     return toClientUser(user, user.deviceIds[0] ?? '');
   },
 };

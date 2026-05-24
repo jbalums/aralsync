@@ -49,4 +49,14 @@ export const authService = {
     const res = await http.get<{ data: User }>('/auth/me');
     return res.data.data;
   },
+
+  async updateProfile(data: {
+    name?: string;
+    employeeNumber?: string;
+    position?: string;
+    avatarUrl?: string;
+  }): Promise<User> {
+    const res = await http.patch<{ data: User }>('/auth/me', data);
+    return res.data.data;
+  },
 };

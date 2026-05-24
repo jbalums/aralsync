@@ -23,6 +23,12 @@ export const createSchoolSchema = z.object({
 
 export const updateSchoolSchema = createSchoolSchema.partial();
 
+export const updateSchoolInfoSchema = z.object({
+  division: z.string().min(2).optional(),
+  district: z.string().optional(),
+  address:  z.string().optional(),
+});
+
 export const bulkCreateSchoolsSchema = z.object({
   division: z.string().min(2, 'Division is required'),
   district: z.string().optional(),

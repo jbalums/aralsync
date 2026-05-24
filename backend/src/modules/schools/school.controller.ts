@@ -50,6 +50,32 @@ export const schoolController = {
     }
   },
 
+  async getById(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const school = await schoolService.getById(req.params.id as string);
+      success(res, school);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async updateInfo(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { role, schoolId } = req.user!;
+      if (role !== 'super_admin' && schoolId !== req.params.id) {
+        res.status(403).json({ message: 'Forbidden: not your school' });
+        return;
+      }
+      const school = await schoolService.updateInfo(
+        req.params.id as string,
+        req.body as { division?: string; district?: string; address?: string },
+      );
+      success(res, school);
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async getYears(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const years = await schoolService.getYears(req.params.id as string);

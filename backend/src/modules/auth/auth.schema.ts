@@ -21,3 +21,10 @@ export const refreshSchema = z.object({
 export const logoutSchema = z.object({
   refreshToken: z.string().min(1),
 });
+
+export const updateProfileSchema = z.object({
+  name:           z.string().min(2).optional(),
+  employeeNumber: z.string().optional(),
+  position:       z.string().optional(),
+  avatarUrl:      z.string().max(200_000).optional(),
+});
