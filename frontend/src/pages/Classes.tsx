@@ -33,6 +33,7 @@ import {
 	useClassLoadStudents,
 	useCreateClassLoad,
 } from "../modules/classrooms/useClassLoads";
+import { gradeLevels } from "../data/phEducation";
 import type { ClassLoadListItem, Student } from "../shared/types";
 
 // ─── Subject colour palette ──────────────────────────────
@@ -54,7 +55,7 @@ function subjectHue(name: string) {
 const createSchema = z
 	.object({
 		subjectName: z.string().min(1, "Subject name is required"),
-		gradeLevel: z.coerce.number().int().min(7).max(12),
+		gradeLevel: z.string().min(1, "Grade level is required"),
 		sectionName: z.string().min(1, "Section name is required"),
 		quarter: z.enum(["Q1", "Q2", "Q3", "Q4"]),
 		roomNumber: z.string().default(""),
@@ -84,6 +85,7 @@ export function PageClasses() {
 		handleSubmit,
 		watch,
 		reset,
+		setValue,
 		formState: { errors, isSubmitting },
 	} = useForm<CreateFormValues>({
 		resolver: zodResolver(createSchema),
@@ -92,12 +94,16 @@ export function PageClasses() {
 			ptPct: 60,
 			qaPct: 20,
 			quarter: "Q1",
-			gradeLevel: 7,
+			gradeLevel: "grade-7",
 		},
 	});
 
 	const [ww, pt, qa] = watch(["wwPct", "ptPct", "qaPct"]);
 	const weightSum = (ww ?? 0) + (pt ?? 0) + (qa ?? 0);
+
+	const selectedGradeId = watch("gradeLevel");
+	const selectedGradeLevel = gradeLevels.find((g) => g.id === selectedGradeId);
+	const suggestedSubjects = selectedGradeLevel?.subjects ?? [];
 
 	const onCreateSubmit = async (values: CreateFormValues) => {
 		try {
@@ -263,29 +269,56 @@ export function PageClasses() {
 				}
 			>
 				<form className="grid grid-cols-2 gap-3" noValidate>
-					<Field
-						label="Subject name"
-						required
-						error={errors.subjectName?.message}
-					>
-						<TextInput
-							placeholder="e.g. Science"
-							{...register("subjectName")}
-						/>
-					</Field>
-					<Field
-						label="Grade level"
-						required
-						error={errors.gradeLevel?.message}
-					>
-						<Select {...register("gradeLevel")}>
-							{[7, 8, 9, 10, 11, 12].map((g) => (
-								<option key={g} value={g}>
-									Grade {g}
-								</option>
-							))}
-						</Select>
-					</Field>
+					<div>
+						<Field
+							label="Subject name"
+							required
+							error={errors.subjectName?.message}
+						>
+							<TextInput
+								placeholder="e.g. Science"
+								{...register("subjectName")}
+							/>
+						</Field>
+						{suggestedSubjects.length > 0 && (
+							<div className="flex flex-wrap gap-1 mt-1.5">
+								{suggestedSubjects.map((s) => (
+									<button
+										key={s}
+										type="button"
+										onClick={() =>
+											setValue("subjectName", s, {
+												shouldValidate: true,
+											})
+										}
+										className="text-[11px] px-2 py-0.5 rounded-full border border-slate-200 bg-slate-50 hover:bg-primary/10 hover:border-primary/40 transition-colors text-slate-700 cursor-pointer"
+									>
+										{s}
+									</button>
+								))}
+							</div>
+						)}
+					</div>
+					<div>
+						<Field
+							label="Grade level"
+							required
+							error={errors.gradeLevel?.message}
+						>
+							<Select {...register("gradeLevel")}>
+								{gradeLevels.map((g) => (
+									<option key={g.id} value={g.id}>
+										{g.label}
+									</option>
+								))}
+							</Select>
+						</Field>
+						{selectedGradeLevel && (
+							<p className="text-[11px] text-muted mt-1 leading-snug">
+								{selectedGradeLevel.description}
+							</p>
+						)}
+					</div>
 					<Field
 						label="Section name"
 						required
