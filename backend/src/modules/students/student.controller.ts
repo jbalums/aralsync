@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { studentService } from './student.service';
 import { success, error } from '../../shared/utils/response';
+import { logAudit } from '../../shared/utils/auditLog';
 
 export const studentController = {
   async list(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -56,6 +57,14 @@ export const studentController = {
         req.body as Parameters<typeof studentService.create>[0],
         req.user!.userId,
       );
+      void logAudit({
+        schoolId:  req.user!.schoolId,
+        actorId:   req.user!.userId,
+        actorName: req.user!.name,
+        action:    'student.create',
+        target:    `${(req.body as { firstName?: string; lastName?: string }).firstName ?? ''} ${(req.body as { lastName?: string }).lastName ?? ''}`.trim(),
+        tone:      'create',
+      });
       success(res, student, 201);
     } catch (err) {
       next(err);
@@ -104,6 +113,15 @@ export const studentController = {
         students: Parameters<typeof studentService.bulkImport>[1];
       };
       const result = await studentService.bulkImport(classLoadId, students, req.user!.userId);
+      const count = Array.isArray(students) ? students.length : 0;
+      void logAudit({
+        schoolId:  req.user!.schoolId,
+        actorId:   req.user!.userId,
+        actorName: req.user!.name,
+        action:    'student.import',
+        target:    `${count} student${count !== 1 ? 's' : ''} imported`,
+        tone:      'create',
+      });
       success(res, result);
     } catch (err) {
       next(err);

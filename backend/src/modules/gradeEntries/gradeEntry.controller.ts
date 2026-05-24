@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { gradeEntryService } from './gradeEntry.service';
 import { success, error } from '../../shared/utils/response';
+import { logAudit } from '../../shared/utils/auditLog';
 
 export const gradeEntryController = {
   async getMatrix(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -25,6 +26,14 @@ export const gradeEntryController = {
         entries:     Parameters<typeof gradeEntryService.bulkSave>[2];
       };
       const result = await gradeEntryService.bulkSave(classLoadId, quarter, entries, req.user!.userId);
+      void logAudit({
+        schoolId:  req.user!.schoolId,
+        actorId:   req.user!.userId,
+        actorName: req.user!.name,
+        action:    'grade.update',
+        target:    `Grade entries · ${quarter}`,
+        tone:      'edit',
+      });
       success(res, result, 201);
     } catch (err) {
       next(err);

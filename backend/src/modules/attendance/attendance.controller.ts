@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { attendanceService } from './attendance.service';
 import { success, error } from '../../shared/utils/response';
+import { logAudit } from '../../shared/utils/auditLog';
 
 export const attendanceController = {
   async getByDate(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -41,6 +42,15 @@ export const attendanceController = {
     try {
       const { records } = req.body as { records: Parameters<typeof attendanceService.submit>[0] };
       const result = await attendanceService.submit(records, req.user!.userId);
+      const first = (records as Array<{ session?: string; classLoadId?: string }>)[0];
+      void logAudit({
+        schoolId:  req.user!.schoolId,
+        actorId:   req.user!.userId,
+        actorName: req.user!.name,
+        action:    'attendance.save',
+        target:    `Attendance · ${first?.session ?? ''}`,
+        tone:      'save',
+      });
       success(res, result, 201);
     } catch (err) {
       next(err);

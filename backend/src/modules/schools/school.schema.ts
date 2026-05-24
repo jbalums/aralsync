@@ -6,6 +6,16 @@ export const createSchoolYearSchema = z.object({
   endDate: z.string().datetime({ offset: true }).or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
 });
 
+export const updateFacultySchema = z.object({
+  department: z.string().optional(),
+  position:   z.string().optional(),
+});
+
+export const facultyUserParamSchema = z.object({
+  id:     z.string().min(1),
+  userId: z.string().min(1),
+});
+
 export const updateSchoolYearSchema = z
   .object({
     label:     z.string().min(1).optional(),

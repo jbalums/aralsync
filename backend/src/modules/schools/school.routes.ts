@@ -11,6 +11,8 @@ import {
   bulkCreateSchoolsSchema,
   schoolIdParamSchema,
   yearIdParamSchema,
+  updateFacultySchema,
+  facultyUserParamSchema,
 } from './school.schema';
 import { Role } from '../../shared/types';
 
@@ -51,6 +53,18 @@ router.delete(
   '/:id/years/:yearId',
   validateParams(yearIdParamSchema),
   schoolController.deleteYear,
+);
+
+// Admin-level school views
+router.get('/:id/admin-summary',  validateParams(schoolIdParamSchema), schoolController.getAdminSummary);
+router.get('/:id/faculty',        validateParams(schoolIdParamSchema), schoolController.getFaculty);
+router.get('/:id/classes',        validateParams(schoolIdParamSchema), schoolController.getAllClasses);
+router.get('/:id/audit-log',      validateParams(schoolIdParamSchema), schoolController.getAuditLog);
+router.patch(
+  '/:id/faculty/:userId',
+  validateParams(facultyUserParamSchema),
+  validateBody(updateFacultySchema),
+  schoolController.updateFacultyMember,
 );
 
 export { router as schoolRouter };

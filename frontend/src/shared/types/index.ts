@@ -17,6 +17,8 @@ export interface User {
   role: UserRole;
   deviceId: string;
   refreshToken?: string;
+  department?: string;
+  lastSeenAt?: string;
 }
 
 export interface School {
@@ -133,6 +135,52 @@ export interface ClassLoadListItem {
 
 export interface ClassLoadDetail extends ClassLoadListItem {
   schedule: { dayOfWeek: number[]; timeStart: string; timeEnd: string };
+}
+
+export interface AdminSummary {
+  facultyCount: number;
+  studentCount: number;
+  sectionCount: number;
+  classCount: number;
+  schoolAvgAttendance: number;
+  attendanceByDept: Array<{ dept: string; rate: number; studentCount: number }>;
+  gradeDistribution: {
+    highestHonors: number;
+    highHonors: number;
+    honors: number;
+    passing: number;
+    needsHelp: number;
+  };
+}
+
+export interface FacultyMember {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  department: string;
+  employeeNumber: string;
+  position: string;
+  classCount: number;
+  lastSeenAt: string | null;
+}
+
+export interface AdminClass {
+  id: string;
+  subject: { name: string; gradeLevel: string };
+  section: { name: string; gradeLevel: string };
+  teacher: { id: string; name: string };
+  quarter: Quarter;
+  studentCount: number;
+}
+
+export interface AuditEntry {
+  id: string;
+  actorName: string;
+  action: string;
+  target: string;
+  tone: string;
+  createdAt: string;
 }
 
 export interface SyncQueueItem {

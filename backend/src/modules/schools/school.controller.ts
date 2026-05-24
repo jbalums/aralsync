@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { schoolService } from './school.service';
 import { success } from '../../shared/utils/response';
+import { logAudit } from '../../shared/utils/auditLog';
 
 export const schoolController = {
   async listAll(_req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -125,7 +126,65 @@ export const schoolController = {
   async activateYear(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const year = await schoolService.activateYear(req.params.id as string, req.params.yearId as string);
+      void logAudit({
+        schoolId:  req.params.id,
+        actorId:   req.user!.userId,
+        actorName: req.user!.name,
+        action:    'year.activate',
+        target:    year.label,
+        tone:      'lock',
+      });
       success(res, year);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getAdminSummary(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const summary = await schoolService.getAdminSummary(req.params.id as string);
+      success(res, summary);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getFaculty(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const faculty = await schoolService.getFaculty(req.params.id as string);
+      success(res, faculty);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getAllClasses(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const classes = await schoolService.getAllClasses(req.params.id as string);
+      success(res, classes);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getAuditLog(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const limit = req.query.limit ? Number(req.query.limit) : 50;
+      const log = await schoolService.getAuditLog(req.params.id as string, limit);
+      success(res, log);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async updateFacultyMember(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const member = await schoolService.updateFacultyMember(
+        req.params.id as string,
+        req.params.userId as string,
+        req.body as { department?: string; position?: string },
+      );
+      success(res, member);
     } catch (err) {
       next(err);
     }

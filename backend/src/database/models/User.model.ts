@@ -13,6 +13,8 @@ export interface IUserDocument extends Document {
   deviceIds: string[];
   refreshTokens: string[];
   isActive: boolean;
+  department?: string;
+  lastSeenAt?: Date;
 }
 
 const userSchema = new Schema<IUserDocument>(
@@ -28,6 +30,8 @@ const userSchema = new Schema<IUserDocument>(
     deviceIds: [{ type: String }],
     refreshTokens: [{ type: String }],
     isActive: { type: Boolean, default: true },
+    department:  { type: String, trim: true, default: '' },
+    lastSeenAt:  { type: Date },
   },
   { timestamps: true },
 );

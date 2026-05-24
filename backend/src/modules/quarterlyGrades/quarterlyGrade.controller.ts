@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { quarterlyGradeService } from './quarterlyGrade.service';
 import { success, error } from '../../shared/utils/response';
+import { logAudit } from '../../shared/utils/auditLog';
 
 export const quarterlyGradeController = {
   async get(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -24,6 +25,14 @@ export const quarterlyGradeController = {
     try {
       const { classLoadId, quarter } = req.body as { classLoadId: string; quarter: string };
       const result = await quarterlyGradeService.finalize(classLoadId, quarter, req.user!.userId);
+      void logAudit({
+        schoolId:  req.user!.schoolId,
+        actorId:   req.user!.userId,
+        actorName: req.user!.name,
+        action:    'grade.finalize',
+        target:    `Quarterly grades · ${quarter}`,
+        tone:      'lock',
+      });
       success(res, result);
     } catch (err) { next(err); }
   },

@@ -10,12 +10,13 @@ const REFRESH_EXPIRES = process.env.JWT_REFRESH_EXPIRES ?? '7d';
 
 function issueTokens(
   userId: string,
+  name: string,
   email: string,
   role: Role,
   schoolId: string | undefined,
   deviceId: string,
 ): { accessToken: string; refreshToken: string } {
-  const payload: JwtPayload = { userId, email, role, schoolId, deviceId };
+  const payload: JwtPayload = { userId, name, email, role, schoolId, deviceId };
   const accessToken = jwt.sign(payload, process.env.JWT_SECRET as string, {
     expiresIn: ACCESS_EXPIRES,
   } as jwt.SignOptions);
@@ -74,6 +75,7 @@ export const authService = {
 
     const tokens = issueTokens(
       (user._id as mongoose.Types.ObjectId).toString(),
+      user.fullName,
       user.email,
       user.role,
       school._id.toString(),
@@ -105,6 +107,7 @@ export const authService = {
 
     const tokens = issueTokens(
       (user._id as mongoose.Types.ObjectId).toString(),
+      user.fullName,
       user.email,
       user.role,
       user.schoolId?.toString(),
@@ -113,6 +116,7 @@ export const authService = {
 
     // keep only last 10 refresh tokens per user
     user.refreshTokens = [...user.refreshTokens.slice(-9), tokens.refreshToken];
+    user.lastSeenAt = new Date();
     await user.save();
 
     return { user: toClientUser(user, data.deviceId), tokens };
@@ -136,6 +140,7 @@ export const authService = {
 
     const tokens = issueTokens(
       payload.userId,
+      user.fullName,
       payload.email,
       payload.role,
       payload.schoolId,
@@ -146,6 +151,7 @@ export const authService = {
       .filter((t) => t !== refreshToken)
       .concat(tokens.refreshToken)
       .slice(-10);
+    user.lastSeenAt = new Date();
     await user.save();
 
     return tokens;

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { classLoadService } from './classLoad.service';
 import { success, error } from '../../shared/utils/response';
+import { logAudit } from '../../shared/utils/auditLog';
 
 export const classLoadController = {
   async list(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -44,6 +45,15 @@ export const classLoadController = {
         req.user!.userId,
         req.body as Parameters<typeof classLoadService.create>[1],
       );
+      void logAudit({
+        schoolId:  req.user!.schoolId,
+        actorId:   req.user!.userId,
+        actorName: req.user!.name,
+        action:    'class.create',
+        target:    `New class load created`,
+        tone:      'create',
+        metadata:  { classLoadId: load.id },
+      });
       success(res, load, 201);
     } catch (err) {
       next(err);
