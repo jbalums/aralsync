@@ -6,6 +6,14 @@ export const createSchoolYearSchema = z.object({
   endDate: z.string().datetime({ offset: true }).or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
 });
 
+export const updateSchoolYearSchema = z
+  .object({
+    label:     z.string().min(1).optional(),
+    startDate: z.string().datetime({ offset: true }).or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional(),
+    endDate:   z.string().datetime({ offset: true }).or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional(),
+  })
+  .refine((d) => Object.keys(d).length > 0, { message: 'At least one field is required' });
+
 export const schoolIdParamSchema = z.object({ id: z.string().min(1) });
 
 export const yearIdParamSchema = z.object({

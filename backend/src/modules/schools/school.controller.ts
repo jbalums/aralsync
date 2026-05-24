@@ -97,6 +97,31 @@ export const schoolController = {
     }
   },
 
+  async updateYear(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const year = await schoolService.updateYear(
+        req.params.id as string,
+        req.params.yearId as string,
+        req.body as { label?: string; startDate?: string; endDate?: string },
+      );
+      success(res, year);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async deleteYear(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await schoolService.deleteYear(
+        req.params.id as string,
+        req.params.yearId as string,
+      );
+      success(res, result);
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async activateYear(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const year = await schoolService.activateYear(req.params.id as string, req.params.yearId as string);

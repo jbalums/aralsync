@@ -4,6 +4,7 @@ import { authenticate, authorize } from '../../middleware/auth.middleware';
 import { validateBody, validateParams } from '../../middleware/validate.middleware';
 import {
   createSchoolYearSchema,
+  updateSchoolYearSchema,
   createSchoolSchema,
   updateSchoolSchema,
   updateSchoolInfoSchema,
@@ -39,6 +40,17 @@ router.put(
   '/:id/years/:yearId/activate',
   validateParams(yearIdParamSchema),
   schoolController.activateYear,
+);
+router.put(
+  '/:id/years/:yearId',
+  validateParams(yearIdParamSchema),
+  validateBody(updateSchoolYearSchema),
+  schoolController.updateYear,
+);
+router.delete(
+  '/:id/years/:yearId',
+  validateParams(yearIdParamSchema),
+  schoolController.deleteYear,
 );
 
 export { router as schoolRouter };

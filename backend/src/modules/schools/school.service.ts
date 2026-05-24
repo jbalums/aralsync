@@ -198,6 +198,44 @@ export const schoolService = {
     };
   },
 
+  async updateYear(
+    schoolObjectId: string,
+    yearId: string,
+    data: { label?: string; startDate?: string; endDate?: string },
+  ) {
+    const year = await SchoolYear.findOne({ _id: yearId, schoolId: schoolObjectId });
+    if (!year) {
+      throw Object.assign(new Error('School year not found'), { statusCode: 404 });
+    }
+    if (data.label     !== undefined) year.label     = data.label;
+    if (data.startDate !== undefined) year.startDate = new Date(data.startDate);
+    if (data.endDate   !== undefined) year.endDate   = new Date(data.endDate);
+    await year.save();
+    return {
+      id:        (year._id as mongoose.Types.ObjectId).toString(),
+      schoolId:  year.schoolId.toString(),
+      label:     year.label,
+      startDate: year.startDate.toISOString().slice(0, 10),
+      endDate:   year.endDate.toISOString().slice(0, 10),
+      isActive:  year.isActive,
+    };
+  },
+
+  async deleteYear(schoolObjectId: string, yearId: string) {
+    const year = await SchoolYear.findOne({ _id: yearId, schoolId: schoolObjectId });
+    if (!year) {
+      throw Object.assign(new Error('School year not found'), { statusCode: 404 });
+    }
+    if (year.isActive) {
+      throw Object.assign(
+        new Error('Cannot delete the active school year'),
+        { statusCode: 409 },
+      );
+    }
+    await year.deleteOne();
+    return { id: yearId };
+  },
+
   async activateYear(schoolObjectId: string, yearId: string) {
     const year = await SchoolYear.findOne({ _id: yearId, schoolId: schoolObjectId });
     if (!year) {

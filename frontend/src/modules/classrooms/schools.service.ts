@@ -89,4 +89,20 @@ export const schoolsService = {
     );
     return res.data.data;
   },
+
+  async updateYear(
+    schoolId: string,
+    yearId: string,
+    payload: Partial<CreateSchoolYearPayload>,
+  ): Promise<SchoolYear> {
+    const res = await http.put<{ data: SchoolYear }>(
+      `/schools/${schoolId}/years/${yearId}`,
+      payload,
+    );
+    return res.data.data;
+  },
+
+  async deleteYear(schoolId: string, yearId: string): Promise<void> {
+    await http.delete(`/schools/${schoolId}/years/${yearId}`);
+  },
 };

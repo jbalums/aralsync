@@ -33,6 +33,8 @@ export interface SchoolYear {
   id: string;
   schoolId: string;
   label: string;
+  startDate: string;
+  endDate: string;
   isActive: boolean;
 }
 

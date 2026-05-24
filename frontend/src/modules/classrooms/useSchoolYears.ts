@@ -33,3 +33,29 @@ export function useActivateSchoolYear(schoolId: string) {
     },
   });
 }
+
+export function useUpdateSchoolYear(schoolId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      yearId,
+      payload,
+    }: {
+      yearId: string;
+      payload: Partial<CreateSchoolYearPayload>;
+    }) => schoolsService.updateYear(schoolId, yearId, payload),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: SCHOOL_YEAR_KEYS.list(schoolId) });
+    },
+  });
+}
+
+export function useDeleteSchoolYear(schoolId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (yearId: string) => schoolsService.deleteYear(schoolId, yearId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: SCHOOL_YEAR_KEYS.list(schoolId) });
+    },
+  });
+}
