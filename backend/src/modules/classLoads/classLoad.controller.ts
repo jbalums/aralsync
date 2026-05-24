@@ -49,4 +49,17 @@ export const classLoadController = {
       next(err);
     }
   },
+
+  async update(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const load = await classLoadService.update(
+        req.params.id as string,
+        req.user!.userId,
+        req.body as Parameters<typeof classLoadService.update>[2],
+      );
+      success(res, load);
+    } catch (err) {
+      next(err);
+    }
+  },
 };

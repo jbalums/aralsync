@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { classLoadsService, type CreateClassLoadPayload } from './classLoads.service';
+import { classLoadsService, type CreateClassLoadPayload, type UpdateClassLoadPayload } from './classLoads.service';
+import { SCHEDULE_KEYS } from '../schedules/useSchedules';
 
 export const CLASS_LOAD_KEYS = {
   all: ['class-loads'] as const,
@@ -36,6 +37,18 @@ export function useCreateClassLoad() {
     mutationFn: (payload: CreateClassLoadPayload) => classLoadsService.create(payload),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: CLASS_LOAD_KEYS.all });
+    },
+  });
+}
+
+export function useUpdateClassLoad(classId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: UpdateClassLoadPayload) => classLoadsService.update(classId, payload),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: CLASS_LOAD_KEYS.detail(classId) });
+      void qc.invalidateQueries({ queryKey: CLASS_LOAD_KEYS.all });
+      void qc.invalidateQueries({ queryKey: SCHEDULE_KEYS.weekly });
     },
   });
 }

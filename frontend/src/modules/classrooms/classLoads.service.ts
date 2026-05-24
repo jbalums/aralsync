@@ -1,6 +1,13 @@
 import { http } from '../../services/http';
 import type { ClassLoadListItem, ClassLoadDetail, Student, Quarter } from '../../shared/types';
 
+export interface UpdateClassLoadPayload {
+  roomNumber?: string;
+  quarter?: Quarter;
+  schedule?: { dayOfWeek: number[]; timeStart: string; timeEnd: string };
+  weights?: { ww: number; pt: number; qa: number };
+}
+
 export interface CreateClassLoadPayload {
   subjectName: string;
   gradeLevel: number;
@@ -29,6 +36,11 @@ export const classLoadsService = {
 
   async create(payload: CreateClassLoadPayload): Promise<ClassLoadListItem> {
     const res = await http.post<{ data: ClassLoadListItem }>('/class-loads', payload);
+    return res.data.data;
+  },
+
+  async update(id: string, payload: UpdateClassLoadPayload): Promise<ClassLoadDetail> {
+    const res = await http.patch<{ data: ClassLoadDetail }>(`/class-loads/${id}`, payload);
     return res.data.data;
   },
 };

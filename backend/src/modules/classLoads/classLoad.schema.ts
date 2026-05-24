@@ -27,3 +27,16 @@ export const createClassLoadSchema = z.object({
 });
 
 export const classLoadIdSchema = z.object({ id: z.string().min(1) });
+
+export const updateClassLoadSchema = z.object({
+  roomNumber: z.string().optional(),
+  quarter: z.enum(['Q1', 'Q2', 'Q3', 'Q4']).optional(),
+  schedule: z
+    .object({
+      dayOfWeek: z.array(z.number().int().min(0).max(6)).default([]),
+      timeStart: z.string().default(''),
+      timeEnd: z.string().default(''),
+    })
+    .optional(),
+  weights: weightsSchema.optional(),
+});

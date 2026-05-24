@@ -18,6 +18,7 @@ import {
 import {
 	ClassLoadCard,
 	CreateClassModal,
+	ClassSettingsModal,
 	ClassOverviewTab,
 	ClassStudentsTab,
 	ClassAttendancePlaceholder,
@@ -144,6 +145,7 @@ export function PageClassDetail() {
 	const { classId } = useParams({ strict: false }) as { classId: string };
 	const [tab, setTab] = useState("overview");
 
+	const [settingsOpen, setSettingsOpen] = useState(false);
 	const { data: cls, isLoading } = useClassLoad(classId);
 
 	if (isLoading) {
@@ -216,7 +218,7 @@ export function PageClassDetail() {
 						</div>
 					</div>
 					<div className="flex items-center gap-2">
-						<Btn variant="secondary" size="sm" icon="settings">
+						<Btn variant="secondary" size="sm" icon="settings" onClick={() => setSettingsOpen(true)}>
 							Class settings
 						</Btn>
 						<Btn
@@ -260,6 +262,14 @@ export function PageClassDetail() {
 				<ClassReportsTab
 					studentCount={cls.studentCount}
 					quarter={cls.quarter}
+				/>
+			)}
+
+			{cls && (
+				<ClassSettingsModal
+					open={settingsOpen}
+					onClose={() => setSettingsOpen(false)}
+					cls={cls}
 				/>
 			)}
 		</div>

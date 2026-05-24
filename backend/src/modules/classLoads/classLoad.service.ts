@@ -5,7 +5,15 @@ import { Subject } from '../../database/models/Subject.model';
 import { Section } from '../../database/models/Section.model';
 import { SchoolYear } from '../../database/models/SchoolYear.model';
 import { User } from '../../database/models/User.model';
+import { Schedule } from '../../database/models/Schedule.model';
 import { Quarter } from '../../shared/types';
+
+interface UpdateClassLoadDto {
+  roomNumber?: string;
+  quarter?: Quarter;
+  schedule?: { dayOfWeek: number[]; timeStart: string; timeEnd: string };
+  weights?: { ww: number; pt: number; qa: number };
+}
 
 interface CreateClassLoadDto {
   subjectName: string;
@@ -133,6 +141,40 @@ export const classLoadService = {
       gender: s.gender,
       birthday: s.birthday?.toISOString().slice(0, 10),
     }));
+  },
+
+  async update(id: string, teacherId: string, dto: UpdateClassLoadDto) {
+    const load = await ClassLoad.findOneAndUpdate(
+      { _id: id, teacherId, isActive: true },
+      { $set: dto },
+      { new: true },
+    )
+      .populate('subjectId', 'name gradeLevel')
+      .populate('sectionId', 'name gradeLevel')
+      .lean();
+
+    if (!load) {
+      throw Object.assign(new Error('Class load not found'), { statusCode: 404 });
+    }
+
+    if (dto.schedule?.timeStart) {
+      const [startH = 0, startM = 0] = dto.schedule.timeStart.split(':').map(Number);
+      const [endH = 0, endM = 0] = (dto.schedule.timeEnd ?? '').split(':').map(Number);
+      const durMin = Math.max(30, endH * 60 + endM - startH * 60 - startM);
+
+      await Schedule.updateMany(
+        { classLoadId: new mongoose.Types.ObjectId(id), teacherId: new mongoose.Types.ObjectId(teacherId) },
+        { $set: { startH, startM, durMin, ...(dto.roomNumber !== undefined && { room: dto.roomNumber }) } },
+      );
+    }
+
+    const studentCount = await Student.countDocuments({
+      sectionId: load.sectionId,
+      isActive: true,
+    });
+
+    const item = toListItem(load as Parameters<typeof toListItem>[0], studentCount);
+    return { ...item, schedule: load.schedule };
   },
 
   async create(teacherId: string, dto: CreateClassLoadDto) {
