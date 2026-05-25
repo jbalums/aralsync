@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import {
   Icon, Avatar, Badge, Card, useToast,
   Skeleton, StatCard, Progress,
@@ -12,6 +13,7 @@ import { useDashboardSummary } from '../modules/dashboard/useDashboard';
 import { useWeeklySchedule } from '../modules/schedules/useSchedules';
 import { useAuthStore } from '../modules/auth/authStore';
 import { useSyncStore } from '../modules/sync/syncStore';
+import { useAppContext } from '../app/AppContext';
 
 // ─── helpers ─────────────────────────────────────────────
 
@@ -79,10 +81,14 @@ const FALLBACK_COLOR = { hue: '#64748B', soft: '#F1F5F9', ink: '#334155' };
 
 // ─── DASHBOARD ───────────────────────────────────────────
 
-export function PageDashboard({ online, pending, setRoute, setSelectedClass, openAttendance }) {
+export function PageDashboard() {
   const toast = useToast();
   const user = useAuthStore((s) => s.user);
   const { lastSyncAt, lanPeers } = useSyncStore();
+  const online = useSyncStore((s) => s.isOnline);
+  const pending = useSyncStore((s) => s.queueCount);
+  const navigate = useNavigate();
+  const { setSelectedClassId } = useAppContext();
 
   const { data: summary, isLoading: summaryLoading } = useDashboardSummary();
   const { data: weeklySchedule = [] } = useWeeklySchedule();
@@ -128,6 +134,19 @@ export function PageDashboard({ online, pending, setRoute, setSelectedClass, ope
   const shortName = user?.name?.split(' ')[0] ?? 'Teacher';
   const deviceLabel = user?.deviceId?.slice(0, 8) ?? 'This device';
 
+  const openAttendance = () => { void navigate({ to: '/app/attendance' }); };
+  const openGradebook = () => {
+    const first = classLoads[0];
+    if (first) setSelectedClassId(first.id);
+    void navigate({ to: '/app/gradebook' });
+  };
+  const setRoute = (segment) => { void navigate({ to: `/app/${segment}` }); };
+  const setSelectedClass = (id) => setSelectedClassId(id);
+  const openClassDetail = (id) => {
+    setSelectedClassId(id);
+    void navigate({ to: '/app/classes/$classId', params: { classId: id } });
+  };
+
   return (
     <div className="page-anim space-y-5">
       {/* HERO */}
@@ -161,7 +180,7 @@ export function PageDashboard({ online, pending, setRoute, setSelectedClass, ope
             </p>
             <div className="mt-4 flex items-center gap-2 flex-wrap">
               <Btn variant="primary" icon="clipboard-check" onClick={openAttendance}>Take attendance now</Btn>
-              <Btn variant="secondary" icon="graduation-cap" onClick={() => setRoute('gradebook')}>Continue grading</Btn>
+              <Btn variant="secondary" icon="graduation-cap" onClick={openGradebook}>Continue grading</Btn>
               <span className="hidden sm:inline-flex items-center text-[12px] text-muted ml-2">
                 <Icon name="info" size={13} className="mr-1"/> Tip: press <kbd className="mx-1 px-1.5 py-0.5 rounded border border-line bg-white text-[10px] font-mono">P</kbd> on any student row to mark present.
               </span>
@@ -266,7 +285,7 @@ export function PageDashboard({ online, pending, setRoute, setSelectedClass, ope
                     </div>
                     <div className="hidden sm:flex items-center">
                       {isDone ? (
-                        <Btn variant="ghost" size="sm" icon="eye" onClick={() => { setSelectedClass(s.classId); setRoute('class-detail'); }}>View</Btn>
+                        <Btn variant="ghost" size="sm" icon="eye" onClick={() => openClassDetail(s.classId)}>View</Btn>
                       ) : (
                         <Btn variant={isCurrent ? 'primary' : 'secondary'} size="sm" icon="clipboard-check" onClick={() => { setSelectedClass(s.classId); openAttendance(); }}>Take attendance</Btn>
                       )}
@@ -358,7 +377,7 @@ export function PageDashboard({ online, pending, setRoute, setSelectedClass, ope
           <SectionHeader
             title="Gradebook Progress"
             subtitle={`${activeQuarter} · component entries completed`}
-            right={<Btn size="sm" variant="ghost" iconRight="arrow-right" onClick={() => setRoute('gradebook')}>Open gradebook</Btn>}
+            right={<Btn size="sm" variant="ghost" iconRight="arrow-right" onClick={openGradebook}>Open gradebook</Btn>}
           />
           {summaryLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -456,7 +475,7 @@ export function PageDashboard({ online, pending, setRoute, setSelectedClass, ope
                   <div
                     key={c.id}
                     className="rounded-md border border-line p-3.5 hover:shadow-md tx cursor-pointer"
-                    onClick={() => { setSelectedClass(c.id); setRoute('class-detail'); }}
+                    onClick={() => openClassDetail(c.id)}
                   >
                     <div className="flex items-center justify-between">
                       <SubjectChip subject={c.subject}/>

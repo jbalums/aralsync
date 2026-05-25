@@ -8,6 +8,7 @@ import { configureHttp } from './services/http';
 import { useAuthStore } from './modules/auth/authStore';
 import { authService } from './modules/auth/auth.service';
 import { initBackgroundSync } from './offline/backgroundSync';
+import { connectSocket, disconnectSocket } from './services/socket';
 import { db } from './db';
 import { validateEnv } from './shared/utils/env';
 import './index.css';
@@ -43,7 +44,30 @@ function AppRoot() {
     };
 
     void hydrate();
-    return initBackgroundSync();
+    const cleanupSync = initBackgroundSync();
+
+    // Mount/unmount socket as auth changes
+    const unsubAuth = useAuthStore.subscribe((state, prev) => {
+      const wasAuthed = Boolean(prev.user?.schoolId);
+      const isAuthed  = Boolean(state.user?.schoolId);
+      const u = state.user;
+      if (isAuthed && u?.schoolId && (!wasAuthed || prev.user?.id !== u.id)) {
+        connectSocket({
+          schoolId:   u.schoolId,
+          deviceId:   u.deviceId,
+          deviceName: u.name || 'Device',
+          role:       u.role,
+        });
+      } else if (!isAuthed && wasAuthed) {
+        disconnectSocket();
+      }
+    });
+
+    return () => {
+      cleanupSync();
+      unsubAuth();
+      disconnectSocket();
+    };
   }, []);
 
   return (

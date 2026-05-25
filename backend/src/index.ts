@@ -24,7 +24,11 @@ import { dashboardRouter } from "./modules/dashboard/dashboard.routes";
 
 const app = express();
 const PORT = process.env.PORT ?? 5000;
-const CLIENT_URL = ["http://localhost:5173", "http://localhost:4173"]; //process.env.CLIENT_URL ?? "http://localhost:5173";
+const CLIENT_URL = [
+	"http://localhost:5173",
+	"http://localhost:5174",
+	"http://localhost:4173",
+]; //process.env.CLIENT_URL ?? "http://localhost:5173";
 
 app.use(helmet());
 app.use(cors({ origin: CLIENT_URL, credentials: true }));

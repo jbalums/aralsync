@@ -125,6 +125,7 @@ export const BADGE_STYLES = {
 	excused: { bg: "#EDE9FE", fg: "#4C1D95", dot: "#8B5CF6", label: "Excused" },
 	pending: { bg: "#FEF3C7", fg: "#92400E", dot: "#F59E0B", label: "Pending" },
 	synced: { bg: "#D1FAE5", fg: "#065F46", dot: "#10B981", label: "Synced" },
+	failed: { bg: "#FEE2E2", fg: "#7F1D1D", dot: "#EF4444", label: "Failed" },
 	ontrack: {
 		bg: "#D1FAE5",
 		fg: "#065F46",

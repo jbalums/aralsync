@@ -32,6 +32,17 @@ class AralSyncDB extends Dexie {
       quarterlyGrades:   '&id, classLoadId, studentId, quarter, wwWeighted, ptWeighted, qaWeighted, initialGrade, transmutedGrade, syncStatus',
       syncQueue:         '++id, tableName, recordId, operation, payload, createdAt, retries',
     });
+
+    // v2: add status + lastError on syncQueue so failed items become first-class
+    this.version(2)
+      .stores({
+        syncQueue:       '++id, tableName, recordId, operation, payload, createdAt, retries, status',
+      })
+      .upgrade(async (tx) => {
+        await tx.table('syncQueue').toCollection().modify((item: SyncQueueItem) => {
+          item.status = (item.retries ?? 0) >= 5 ? 'failed' : 'pending';
+        });
+      });
   }
 }
 

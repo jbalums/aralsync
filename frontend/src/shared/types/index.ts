@@ -223,4 +223,21 @@ export interface SyncQueueItem {
   payload: unknown;
   createdAt: string;
   retries: number;
+  status?: 'pending' | 'failed';
+  lastError?: string;
+}
+
+export interface LanPeer {
+  deviceId:   string;
+  deviceName: string;
+  role:       UserRole;
+  joinedAt:   string;
+}
+
+export interface ConflictRecord {
+  tableName:         string;
+  recordId:          string;
+  localUpdatedAt:    string;
+  serverUpdatedAt:   string;
+  detectedAt:        string;
 }
