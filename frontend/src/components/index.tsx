@@ -92,7 +92,10 @@ export function Avatar({
 				alt={name}
 				className={`inline-block object-cover ${shape} ${className}`}
 				style={{ width: px, height: px }}
-				onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+				onError={(e) => {
+					(e.currentTarget as HTMLImageElement).style.display =
+						"none";
+				}}
 			/>
 		);
 	}
@@ -279,10 +282,8 @@ export function Modal({
 }
 
 // Toast system via context
-export interface ToastInput { type?: 'success' | 'error' | 'warning' | 'info'; title?: string; message?: string; duration?: number; }
-interface ToastAPI { push: (t: ToastInput) => string; remove: (id: string) => void; }
-const ToastCtx = createContext<ToastAPI | null>(null);
-export function useToast(): ToastAPI | null {
+const ToastCtx = createContext(null);
+export function useToast() {
 	return useContext(ToastCtx);
 }
 export function ToastProvider({ children }) {
@@ -794,7 +795,11 @@ export function studentStatus(att, grade) {
 }
 
 // Section header
-export function SectionHeader({ title, subtitle, right }: {
+export function SectionHeader({
+	title,
+	subtitle,
+	right,
+}: {
 	title: React.ReactNode;
 	subtitle?: React.ReactNode;
 	right?: React.ReactNode;
@@ -961,7 +966,12 @@ export function Tabs({ tabs, active, onChange, className = "" }) {
 }
 
 // Switch
-export function Switch({ value, onChange, label, hint }: {
+export function Switch({
+	value,
+	onChange,
+	label,
+	hint,
+}: {
 	value: boolean;
 	onChange: (v: boolean) => void;
 	label: React.ReactNode;
@@ -992,7 +1002,14 @@ export function Switch({ value, onChange, label, hint }: {
 }
 
 // Field group
-export function Field({ label, hint, children, required, error, className }: {
+export function Field({
+	label,
+	hint,
+	children,
+	required,
+	error,
+	className,
+}: {
 	label: React.ReactNode;
 	hint?: string;
 	children: React.ReactNode;
@@ -1007,8 +1024,10 @@ export function Field({ label, hint, children, required, error, className }: {
 				{required && <span className="text-rose-500 ml-0.5">*</span>}
 			</div>
 			{children}
-			{error  && <div className="text-[11px] text-rose-500 mt-1">{error}</div>}
-			{hint   && <div className="text-[11px] text-muted mt-1">{hint}</div>}
+			{error && (
+				<div className="text-[11px] text-rose-500 mt-1">{error}</div>
+			)}
+			{hint && <div className="text-[11px] text-muted mt-1">{hint}</div>}
 		</label>
 	);
 }

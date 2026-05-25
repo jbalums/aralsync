@@ -189,4 +189,157 @@ export const schoolController = {
       next(err);
     }
   },
+
+  async updateFacultyRole(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { role } = req.body as { role: 'school_admin' | 'advisory_teacher' | 'subject_teacher' };
+      const updated = await schoolService.updateFacultyRole(
+        req.params.id as string,
+        req.params.userId as string,
+        role,
+      );
+      void logAudit({
+        schoolId:  req.params.id as string,
+        actorId:   req.user!.userId,
+        actorName: req.user!.name,
+        action:    'faculty.role-change',
+        target:    `${updated.name} → ${updated.role}`,
+        tone:      'security',
+        metadata:  { userId: updated.id, newRole: updated.role },
+      });
+      success(res, updated);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async adminCreateClass(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { role, schoolId } = req.user!;
+      if (role !== 'super_admin' && schoolId !== req.params.id) {
+        res.status(403).json({ message: 'Forbidden: not your school' });
+        return;
+      }
+      const result = await schoolService.adminCreateClass(
+        req.params.id as string,
+        req.body as Parameters<typeof schoolService.adminCreateClass>[1],
+      );
+      void logAudit({
+        schoolId:  req.params.id as string,
+        actorId:   req.user!.userId,
+        actorName: req.user!.name,
+        action:    'class.create',
+        target:    `${result.subjectName} · ${result.sectionName} → ${result.teacherName}`,
+        tone:      'create',
+        metadata:  { classLoadId: result.id, teacherId: result.teacherId },
+      });
+      success(res, result, 201);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async adminUpdateClass(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { role, schoolId } = req.user!;
+      if (role !== 'super_admin' && schoolId !== req.params.id) {
+        res.status(403).json({ message: 'Forbidden: not your school' });
+        return;
+      }
+      const result = await schoolService.adminUpdateClass(
+        req.params.id as string,
+        req.params.classId as string,
+        req.body as Parameters<typeof schoolService.adminUpdateClass>[2],
+      );
+      void logAudit({
+        schoolId:  req.params.id as string,
+        actorId:   req.user!.userId,
+        actorName: req.user!.name,
+        action:    'class.update',
+        target:    `${result.subjectName} · ${result.sectionName}`,
+        tone:      'edit',
+        metadata:  { classLoadId: result.id },
+      });
+      success(res, result);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async adminAssignTeacher(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { role, schoolId } = req.user!;
+      if (role !== 'super_admin' && schoolId !== req.params.id) {
+        res.status(403).json({ message: 'Forbidden: not your school' });
+        return;
+      }
+      const { teacherId } = req.body as { teacherId: string };
+      const result = await schoolService.adminAssignTeacher(
+        req.params.id as string,
+        req.params.classId as string,
+        teacherId,
+      );
+      void logAudit({
+        schoolId:  req.params.id as string,
+        actorId:   req.user!.userId,
+        actorName: req.user!.name,
+        action:    'class.reassign',
+        target:    `${result.subjectName} · ${result.sectionName} → ${result.teacherName}`,
+        tone:      'edit',
+        metadata:  { classLoadId: result.id, teacherId: result.teacherId, previousTeacherId: result.previousTeacherId },
+      });
+      success(res, result);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async adminDeleteClass(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { role, schoolId } = req.user!;
+      if (role !== 'super_admin' && schoolId !== req.params.id) {
+        res.status(403).json({ message: 'Forbidden: not your school' });
+        return;
+      }
+      const result = await schoolService.adminDeleteClass(
+        req.params.id as string,
+        req.params.classId as string,
+      );
+      void logAudit({
+        schoolId:  req.params.id as string,
+        actorId:   req.user!.userId,
+        actorName: req.user!.name,
+        action:    'class.delete',
+        target:    `${result.subjectName} · ${result.sectionName}`,
+        tone:      'lock',
+        metadata:  { classLoadId: result.id },
+      });
+      success(res, result);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async assignClassLoad(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { classLoadId } = req.body as { classLoadId: string };
+      const result = await schoolService.assignClassLoad(
+        req.params.id as string,
+        req.params.userId as string,
+        classLoadId,
+      );
+      void logAudit({
+        schoolId:  req.params.id as string,
+        actorId:   req.user!.userId,
+        actorName: req.user!.name,
+        action:    'faculty.class-assign',
+        target:    `Class assigned to faculty`,
+        tone:      'edit',
+        metadata:  result,
+      });
+      success(res, result);
+    } catch (err) {
+      next(err);
+    }
+  },
 };

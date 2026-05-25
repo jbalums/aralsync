@@ -176,11 +176,34 @@ export interface FacultyMember {
 
 export interface AdminClass {
   id: string;
-  subject: { name: string; gradeLevel: string };
-  section: { name: string; gradeLevel: string };
+  subject: { id: string; name: string; gradeLevel: number };
+  section: { id: string; name: string; gradeLevel: number };
   teacher: { id: string; name: string };
   quarter: Quarter;
+  roomNumber: string;
+  weights: { ww: number; pt: number; qa: number };
+  schedule: { dayOfWeek: number[]; timeStart: string; timeEnd: string };
   studentCount: number;
+}
+
+export interface AdminCreateClassPayload {
+  teacherId: string;
+  subjectName: string;
+  gradeLevel: number;
+  sectionName: string;
+  quarter: Quarter;
+  roomNumber?: string;
+  schedule?: { dayOfWeek: number[]; timeStart: string; timeEnd: string };
+  slots?: Array<{ id?: string; dayOfWeek: number; timeStart: string; timeEnd: string; room?: string }>;
+  weights: { ww: number; pt: number; qa: number };
+}
+
+export interface AdminUpdateClassPayload {
+  roomNumber?: string;
+  quarter?: Quarter;
+  schedule?: { dayOfWeek: number[]; timeStart: string; timeEnd: string };
+  slots?: Array<{ id?: string; dayOfWeek: number; timeStart: string; timeEnd: string; room?: string }>;
+  weights?: { ww: number; pt: number; qa: number };
 }
 
 export interface AuditEntry {

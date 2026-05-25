@@ -4,11 +4,13 @@ import { SchoolYear } from '../../database/models/SchoolYear.model';
 import { User } from '../../database/models/User.model';
 import { Section } from '../../database/models/Section.model';
 import { ClassLoad } from '../../database/models/ClassLoad.model';
+import { Subject } from '../../database/models/Subject.model';
 import { Student } from '../../database/models/Student.model';
 import { AttendanceRecord } from '../../database/models/AttendanceRecord.model';
 import { QuarterlyGrade } from '../../database/models/QuarterlyGrade.model';
 import { AuditLog } from '../../database/models/AuditLog.model';
-import { Role } from '../../shared/types';
+import { Schedule } from '../../database/models/Schedule.model';
+import { Role, Quarter } from '../../shared/types';
 
 function mapSchool(s: InstanceType<typeof School> & { _id: unknown }) {
   return {
@@ -390,8 +392,8 @@ export const schoolService = {
       schoolYearId: activeYear._id,
       isActive: true,
     })
-      .populate<{ subjectId: { _id: mongoose.Types.ObjectId; name: string; gradeLevel: string } }>('subjectId', 'name gradeLevel')
-      .populate<{ sectionId: { _id: mongoose.Types.ObjectId; name: string; gradeLevel: string } }>('sectionId', 'name gradeLevel')
+      .populate<{ subjectId: { _id: mongoose.Types.ObjectId; name: string; gradeLevel: number } }>('subjectId', 'name gradeLevel')
+      .populate<{ sectionId: { _id: mongoose.Types.ObjectId; name: string; gradeLevel: number } }>('sectionId', 'name gradeLevel')
       .populate<{ teacherId: { _id: mongoose.Types.ObjectId; fullName: string } }>('teacherId', 'fullName')
       .lean();
 
@@ -403,15 +405,26 @@ export const schoolService = {
     const studentCountMap = new Map(studentAgg.map((a) => [a._id.toString(), a.count]));
 
     return classLoads.map((cl) => {
-      const subj = cl.subjectId as { _id: mongoose.Types.ObjectId; name: string; gradeLevel: string };
-      const sect = cl.sectionId as { _id: mongoose.Types.ObjectId; name: string; gradeLevel: string };
+      const subj = cl.subjectId as { _id: mongoose.Types.ObjectId; name: string; gradeLevel: number };
+      const sect = cl.sectionId as { _id: mongoose.Types.ObjectId; name: string; gradeLevel: number };
       const teacher = cl.teacherId as { _id: mongoose.Types.ObjectId; fullName: string };
       return {
         id:           (cl._id as mongoose.Types.ObjectId).toString(),
-        subject:      { name: subj?.name ?? '', gradeLevel: subj?.gradeLevel ?? '' },
-        section:      { name: sect?.name ?? '', gradeLevel: sect?.gradeLevel ?? '' },
+        subject:      {
+          id:         subj?._id?.toString() ?? '',
+          name:       subj?.name ?? '',
+          gradeLevel: subj?.gradeLevel ?? 0,
+        },
+        section:      {
+          id:         sect?._id?.toString() ?? '',
+          name:       sect?.name ?? '',
+          gradeLevel: sect?.gradeLevel ?? 0,
+        },
         teacher:      { id: teacher?._id?.toString() ?? '', name: teacher?.fullName ?? '' },
         quarter:      cl.quarter,
+        roomNumber:   (cl as { roomNumber?: string }).roomNumber ?? '',
+        weights:      (cl as { weights?: { ww: number; pt: number; qa: number } }).weights ?? { ww: 0.2, pt: 0.6, qa: 0.2 },
+        schedule:     (cl as { schedule?: { dayOfWeek: number[]; timeStart: string; timeEnd: string } }).schedule ?? { dayOfWeek: [], timeStart: '', timeEnd: '' },
         studentCount: studentCountMap.get(sect?._id?.toString() ?? '') ?? 0,
       };
     });
@@ -452,6 +465,318 @@ export const schoolService = {
       role:       user.role,
       department: user.department ?? '',
       position:   user.position ?? '',
+    };
+  },
+
+  async updateFacultyRole(
+    schoolObjectId: string,
+    userId: string,
+    role: 'school_admin' | 'advisory_teacher' | 'subject_teacher',
+  ) {
+    const user = await User.findOne({ _id: userId, schoolId: schoolObjectId, isActive: true });
+    if (!user) {
+      throw Object.assign(new Error('Faculty member not found'), { statusCode: 404 });
+    }
+    if (user.role === Role.SUPER_ADMIN) {
+      throw Object.assign(
+        new Error('Cannot change role of a super admin from this endpoint'),
+        { statusCode: 409 },
+      );
+    }
+    user.role = role as Role;
+    await user.save();
+
+    const classCount = await ClassLoad.countDocuments({ teacherId: user._id, isActive: true });
+
+    return {
+      id:             (user._id as mongoose.Types.ObjectId).toString(),
+      name:           user.fullName,
+      email:          user.email,
+      role:           user.role,
+      department:     (user.department as string | undefined) ?? '',
+      employeeNumber: user.employeeNumber ?? '',
+      position:       user.position ?? '',
+      classCount,
+      lastSeenAt:     (user.lastSeenAt as Date | undefined)?.toISOString() ?? null,
+    };
+  },
+
+  async assignClassLoad(schoolObjectId: string, userId: string, classLoadId: string) {
+    const user = await User.findOne({ _id: userId, schoolId: schoolObjectId, isActive: true });
+    if (!user) {
+      throw Object.assign(new Error('Faculty member not found'), { statusCode: 404 });
+    }
+
+    const load = await ClassLoad.findById(classLoadId)
+      .populate<{ sectionId: { _id: mongoose.Types.ObjectId; schoolId: mongoose.Types.ObjectId; name: string } }>(
+        'sectionId',
+        'schoolId name',
+      );
+    if (!load || !load.isActive) {
+      throw Object.assign(new Error('Class load not found'), { statusCode: 404 });
+    }
+
+    const section = load.sectionId as unknown as {
+      _id: mongoose.Types.ObjectId;
+      schoolId: mongoose.Types.ObjectId;
+      name: string;
+    };
+    if (section.schoolId.toString() !== schoolObjectId) {
+      throw Object.assign(new Error('Class load does not belong to this school'), { statusCode: 403 });
+    }
+
+    const previousTeacherId = (load.teacherId as mongoose.Types.ObjectId).toString();
+    const newTeacherId = (user._id as mongoose.Types.ObjectId).toString();
+
+    if (previousTeacherId === newTeacherId) {
+      return { classLoadId, teacherId: newTeacherId, previousTeacherId };
+    }
+
+    load.teacherId = user._id as mongoose.Types.ObjectId;
+    await load.save();
+
+    await Schedule.updateMany(
+      { classLoadId: new mongoose.Types.ObjectId(classLoadId) },
+      { $set: { teacherId: new mongoose.Types.ObjectId(newTeacherId) } },
+    );
+
+    return { classLoadId, teacherId: newTeacherId, previousTeacherId };
+  },
+
+  // ─── Admin class management ───────────────────────────
+
+  async adminCreateClass(
+    schoolObjectId: string,
+    dto: {
+      teacherId: string;
+      subjectName: string;
+      gradeLevel: number;
+      sectionName: string;
+      quarter: Quarter;
+      roomNumber?: string;
+      schedule?: { dayOfWeek: number[]; timeStart: string; timeEnd: string };
+      slots?: Array<{ id?: string; dayOfWeek: number; timeStart: string; timeEnd: string; room?: string }>;
+      weights: { ww: number; pt: number; qa: number };
+    },
+  ) {
+    const teacher = await User.findOne({ _id: dto.teacherId, schoolId: schoolObjectId, isActive: true });
+    if (!teacher) {
+      throw Object.assign(new Error('Teacher not found in this school'), { statusCode: 404 });
+    }
+    if (![Role.ADVISORY_TEACHER, Role.SUBJECT_TEACHER, Role.SCHOOL_ADMIN].includes(teacher.role as Role)) {
+      throw Object.assign(new Error('Selected user cannot be assigned as a class teacher'), { statusCode: 422 });
+    }
+
+    const activeYear = await SchoolYear.findOne({ schoolId: schoolObjectId, isActive: true });
+    if (!activeYear) {
+      throw Object.assign(
+        new Error('No active school year found. Activate a school year first.'),
+        { statusCode: 422 },
+      );
+    }
+
+    let subject = await Subject.findOne({
+      schoolId: schoolObjectId,
+      name:       { $regex: new RegExp(`^${dto.subjectName}$`, 'i') },
+      gradeLevel: dto.gradeLevel,
+    });
+    if (!subject) {
+      subject = await Subject.create({
+        schoolId:   schoolObjectId,
+        name:       dto.subjectName,
+        gradeLevel: dto.gradeLevel,
+      });
+    }
+
+    let section = await Section.findOne({
+      schoolId:     schoolObjectId,
+      schoolYearId: activeYear._id,
+      gradeLevel:   dto.gradeLevel,
+      name:         { $regex: new RegExp(`^${dto.sectionName}$`, 'i') },
+    });
+    if (!section) {
+      section = await Section.create({
+        schoolId:     schoolObjectId,
+        schoolYearId: activeYear._id,
+        gradeLevel:   dto.gradeLevel,
+        name:         dto.sectionName,
+        adviserId:    teacher._id,
+      });
+    }
+
+    const embeddedSchedule = (() => {
+      if (dto.slots?.length) {
+        const days = Array.from(new Set(dto.slots.map((s) => s.dayOfWeek))).sort((a, b) => a - b);
+        const starts = dto.slots.map((s) => {
+          const [h = 0, m = 0] = s.timeStart.split(':').map(Number);
+          return h * 60 + m;
+        });
+        const ends = dto.slots.map((s) => {
+          const [h = 0, m = 0] = s.timeEnd.split(':').map(Number);
+          return h * 60 + m;
+        });
+        const minS = Math.min(...starts);
+        const maxE = Math.max(...ends);
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        return {
+          dayOfWeek: days,
+          timeStart: `${pad(Math.floor(minS / 60))}:${pad(minS % 60)}`,
+          timeEnd:   `${pad(Math.floor(maxE / 60))}:${pad(maxE % 60)}`,
+        };
+      }
+      return dto.schedule ?? { dayOfWeek: [], timeStart: '', timeEnd: '' };
+    })();
+
+    const load = await ClassLoad.create({
+      teacherId:    teacher._id,
+      subjectId:    subject._id,
+      sectionId:    section._id,
+      schoolYearId: activeYear._id,
+      quarter:      dto.quarter,
+      roomNumber:   dto.roomNumber ?? '',
+      schedule:     embeddedSchedule,
+      weights:      dto.weights,
+    });
+
+    return {
+      id:        (load._id as mongoose.Types.ObjectId).toString(),
+      teacherId: teacher._id.toString(),
+      teacherName: teacher.fullName,
+      subjectName: subject.name,
+      sectionName: section.name,
+      gradeLevel:  section.gradeLevel,
+    };
+  },
+
+  async adminUpdateClass(
+    schoolObjectId: string,
+    classId: string,
+    dto: {
+      roomNumber?: string;
+      quarter?:    Quarter;
+      schedule?:   { dayOfWeek: number[]; timeStart: string; timeEnd: string };
+      slots?:      Array<{ id?: string; dayOfWeek: number; timeStart: string; timeEnd: string; room?: string }>;
+      weights?:    { ww: number; pt: number; qa: number };
+    },
+  ) {
+    const load = await ClassLoad.findOne({ _id: classId, isActive: true })
+      .populate<{ subjectId: { name: string } }>('subjectId', 'name')
+      .populate<{ sectionId: { _id: mongoose.Types.ObjectId; name: string; schoolId: mongoose.Types.ObjectId } }>('sectionId', 'name schoolId');
+
+    if (!load) {
+      throw Object.assign(new Error('Class load not found'), { statusCode: 404 });
+    }
+
+    const section = load.sectionId as unknown as { schoolId: mongoose.Types.ObjectId; name: string };
+    if (section.schoolId.toString() !== schoolObjectId) {
+      throw Object.assign(new Error('Class load not in this school'), { statusCode: 403 });
+    }
+
+    if (dto.roomNumber !== undefined) load.roomNumber = dto.roomNumber;
+    if (dto.quarter    !== undefined) load.quarter    = dto.quarter;
+    if (dto.weights    !== undefined) load.weights    = dto.weights;
+
+    if (dto.slots !== undefined) {
+      if (dto.slots.length) {
+        const days = Array.from(new Set(dto.slots.map((s) => s.dayOfWeek))).sort((a, b) => a - b);
+        const starts = dto.slots.map((s) => {
+          const [h = 0, m = 0] = s.timeStart.split(':').map(Number);
+          return h * 60 + m;
+        });
+        const ends = dto.slots.map((s) => {
+          const [h = 0, m = 0] = s.timeEnd.split(':').map(Number);
+          return h * 60 + m;
+        });
+        const minS = Math.min(...starts);
+        const maxE = Math.max(...ends);
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        load.schedule = {
+          dayOfWeek: days,
+          timeStart: `${pad(Math.floor(minS / 60))}:${pad(minS % 60)}`,
+          timeEnd:   `${pad(Math.floor(maxE / 60))}:${pad(maxE % 60)}`,
+        };
+      } else {
+        load.schedule = { dayOfWeek: [], timeStart: '', timeEnd: '' };
+      }
+    } else if (dto.schedule !== undefined) {
+      load.schedule = dto.schedule;
+    }
+
+    await load.save();
+
+    const subj = load.subjectId as unknown as { name: string };
+    return {
+      id:          (load._id as mongoose.Types.ObjectId).toString(),
+      subjectName: subj.name,
+      sectionName: section.name,
+    };
+  },
+
+  async adminAssignTeacher(schoolObjectId: string, classId: string, newTeacherId: string) {
+    const load = await ClassLoad.findOne({ _id: classId, isActive: true })
+      .populate<{ subjectId: { name: string } }>('subjectId', 'name')
+      .populate<{ sectionId: { _id: mongoose.Types.ObjectId; name: string; schoolId: mongoose.Types.ObjectId } }>('sectionId', 'name schoolId');
+
+    if (!load) {
+      throw Object.assign(new Error('Class load not found'), { statusCode: 404 });
+    }
+
+    const section = load.sectionId as unknown as { schoolId: mongoose.Types.ObjectId; name: string };
+    if (section.schoolId.toString() !== schoolObjectId) {
+      throw Object.assign(new Error('Class load not in this school'), { statusCode: 403 });
+    }
+
+    const teacher = await User.findOne({ _id: newTeacherId, schoolId: schoolObjectId, isActive: true });
+    if (!teacher) {
+      throw Object.assign(new Error('Teacher not found in this school'), { statusCode: 404 });
+    }
+    if (![Role.ADVISORY_TEACHER, Role.SUBJECT_TEACHER, Role.SCHOOL_ADMIN].includes(teacher.role as Role)) {
+      throw Object.assign(new Error('Selected user cannot be assigned as a class teacher'), { statusCode: 422 });
+    }
+
+    const previousTeacherId = load.teacherId.toString();
+    load.teacherId = teacher._id as mongoose.Types.ObjectId;
+    await load.save();
+
+    // keep any Schedule rows aligned with the new teacher
+    await Schedule.updateMany(
+      { classLoadId: load._id },
+      { $set: { teacherId: teacher._id } },
+    );
+
+    const subj = load.subjectId as unknown as { name: string };
+    return {
+      id:                (load._id as mongoose.Types.ObjectId).toString(),
+      teacherId:         teacher._id.toString(),
+      teacherName:       teacher.fullName,
+      previousTeacherId,
+      subjectName:       subj.name,
+      sectionName:       section.name,
+    };
+  },
+
+  async adminDeleteClass(schoolObjectId: string, classId: string) {
+    const load = await ClassLoad.findOne({ _id: classId, isActive: true })
+      .populate<{ subjectId: { name: string } }>('subjectId', 'name')
+      .populate<{ sectionId: { _id: mongoose.Types.ObjectId; name: string; schoolId: mongoose.Types.ObjectId } }>('sectionId', 'name schoolId');
+
+    if (!load) {
+      throw Object.assign(new Error('Class load not found'), { statusCode: 404 });
+    }
+
+    const section = load.sectionId as unknown as { schoolId: mongoose.Types.ObjectId; name: string };
+    if (section.schoolId.toString() !== schoolObjectId) {
+      throw Object.assign(new Error('Class load not in this school'), { statusCode: 403 });
+    }
+
+    load.isActive = false;
+    await load.save();
+
+    const subj = load.subjectId as unknown as { name: string };
+    return {
+      id:          (load._id as mongoose.Types.ObjectId).toString(),
+      subjectName: subj.name,
+      sectionName: section.name,
     };
   },
 

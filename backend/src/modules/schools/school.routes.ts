@@ -12,7 +12,13 @@ import {
   schoolIdParamSchema,
   yearIdParamSchema,
   updateFacultySchema,
+  updateFacultyRoleSchema,
+  assignClassLoadSchema,
   facultyUserParamSchema,
+  adminCreateClassSchema,
+  adminUpdateClassSchema,
+  assignTeacherSchema,
+  classIdParamSchema,
 } from './school.schema';
 import { Role } from '../../shared/types';
 
@@ -65,6 +71,49 @@ router.patch(
   validateParams(facultyUserParamSchema),
   validateBody(updateFacultySchema),
   schoolController.updateFacultyMember,
+);
+router.patch(
+  '/:id/faculty/:userId/role',
+  authorize(Role.SCHOOL_ADMIN, Role.SUPER_ADMIN),
+  validateParams(facultyUserParamSchema),
+  validateBody(updateFacultyRoleSchema),
+  schoolController.updateFacultyRole,
+);
+router.post(
+  '/:id/faculty/:userId/class-assignments',
+  authorize(Role.SCHOOL_ADMIN, Role.SUPER_ADMIN),
+  validateParams(facultyUserParamSchema),
+  validateBody(assignClassLoadSchema),
+  schoolController.assignClassLoad,
+);
+
+// Admin class management — restricted to school_admin and super_admin
+router.post(
+  '/:id/classes',
+  authorize(Role.SCHOOL_ADMIN, Role.SUPER_ADMIN),
+  validateParams(schoolIdParamSchema),
+  validateBody(adminCreateClassSchema),
+  schoolController.adminCreateClass,
+);
+router.patch(
+  '/:id/classes/:classId',
+  authorize(Role.SCHOOL_ADMIN, Role.SUPER_ADMIN),
+  validateParams(classIdParamSchema),
+  validateBody(adminUpdateClassSchema),
+  schoolController.adminUpdateClass,
+);
+router.patch(
+  '/:id/classes/:classId/teacher',
+  authorize(Role.SCHOOL_ADMIN, Role.SUPER_ADMIN),
+  validateParams(classIdParamSchema),
+  validateBody(assignTeacherSchema),
+  schoolController.adminAssignTeacher,
+);
+router.delete(
+  '/:id/classes/:classId',
+  authorize(Role.SCHOOL_ADMIN, Role.SUPER_ADMIN),
+  validateParams(classIdParamSchema),
+  schoolController.adminDeleteClass,
 );
 
 export { router as schoolRouter };
