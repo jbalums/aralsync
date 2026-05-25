@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -31,6 +32,11 @@ export function PageOwnerDashboard() {
   const _toast = useToast() as { push: (t: { type: string; title?: string; message?: string }) => void } | null;
   const push = _toast?.push.bind(_toast) ?? (() => {});
   const qc = useQueryClient();
+  const navigate = useNavigate();
+
+  function openSchoolProfile(school: School) {
+    navigate({ to: '/app/owner/schools/$schoolId', params: { schoolId: school.id } });
+  }
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -202,10 +208,19 @@ export function PageOwnerDashboard() {
                 {schools.map((school) => (
                   <tr key={school.id} className="border-t border-line hover:bg-slate-50/40">
                     <td className="px-3 py-2.5">
-                      <div className="font-semibold text-navy">{school.name}</div>
-                      {school.address && (
-                        <div className="text-[11px] text-muted">{school.address}</div>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => openSchoolProfile(school)}
+                        className="text-left group"
+                        title="Open school profile"
+                      >
+                        <div className="font-semibold text-navy group-hover:text-primary group-hover:underline underline-offset-2 decoration-primary/40 transition-colors">
+                          {school.name}
+                        </div>
+                        {school.address && (
+                          <div className="text-[11px] text-muted">{school.address}</div>
+                        )}
+                      </button>
                     </td>
                     <td className="px-3 py-2.5 font-mono text-navy">{school.schoolId}</td>
                     <td className="px-3 py-2.5 text-navy/80">{school.division}</td>
