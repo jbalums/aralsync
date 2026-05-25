@@ -10,6 +10,7 @@ import { Server as SocketIOServer } from "socket.io";
 import { connectDB } from "./database/connection";
 import { errorMiddleware } from "./middleware/error.middleware";
 import { registerSyncHandlers } from "./websocket/syncHandler";
+import { migrateDeviceIdsToDevices } from "./database/migrations/devices.migration";
 
 import { authRouter } from "./modules/auth/auth.routes";
 import { schoolRouter } from "./modules/schools/school.routes";
@@ -26,7 +27,8 @@ const app = express();
 const PORT = process.env.PORT ?? 5000;
 const CLIENT_URL = [
 	"http://localhost:5173",
-	"http://localhost:5174",
+	"http://localhost:5555",
+	"http://192.168.1.104:5555",
 	"http://localhost:4173",
 ]; //process.env.CLIENT_URL ?? "http://localhost:5173";
 
@@ -68,6 +70,7 @@ registerSyncHandlers(io);
 
 async function bootstrap(): Promise<void> {
 	await connectDB();
+	await migrateDeviceIdsToDevices();
 	server.listen(PORT, () => {
 		console.log(`AralSync API running on port ${PORT}`);
 	});

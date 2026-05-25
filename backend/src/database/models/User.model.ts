@@ -1,5 +1,15 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import { Role } from '../../shared/types';
+import type { DeviceType } from '../../shared/utils/userAgent';
+
+export interface IDevice {
+  deviceId:   string;
+  name:       string;
+  type:       DeviceType;
+  userAgent:  string;
+  createdAt:  Date;
+  lastSeenAt: Date;
+}
 
 export interface IUserDocument extends Document {
   email: string;
@@ -10,12 +20,24 @@ export interface IUserDocument extends Document {
   avatarUrl: string;
   schoolId?: mongoose.Types.ObjectId;
   role: Role;
-  deviceIds: string[];
+  devices: IDevice[];
   refreshTokens: string[];
   isActive: boolean;
   department?: string;
   lastSeenAt?: Date;
 }
+
+const deviceSchema = new Schema<IDevice>(
+  {
+    deviceId:   { type: String, required: true },
+    name:       { type: String, required: true, trim: true },
+    type:       { type: String, enum: ['tablet', 'laptop', 'phone', 'desktop', 'other'], default: 'other' },
+    userAgent:  { type: String, default: '' },
+    createdAt:  { type: Date, default: () => new Date() },
+    lastSeenAt: { type: Date, default: () => new Date() },
+  },
+  { _id: false },
+);
 
 const userSchema = new Schema<IUserDocument>(
   {
@@ -27,7 +49,7 @@ const userSchema = new Schema<IUserDocument>(
     avatarUrl:      { type: String, default: '' },
     schoolId: { type: Schema.Types.ObjectId, ref: 'School', required: false },
     role: { type: String, enum: Object.values(Role), required: true },
-    deviceIds: [{ type: String }],
+    devices: { type: [deviceSchema], default: [] },
     refreshTokens: [{ type: String }],
     isActive: { type: Boolean, default: true },
     department:  { type: String, trim: true, default: '' },
@@ -38,6 +60,7 @@ const userSchema = new Schema<IUserDocument>(
 
 userSchema.index({ email: 1 });
 userSchema.index({ schoolId: 1 });
+userSchema.index({ 'devices.deviceId': 1 });
 
 userSchema.set('toJSON', {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

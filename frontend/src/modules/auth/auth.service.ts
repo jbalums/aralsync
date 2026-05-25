@@ -1,10 +1,12 @@
 import { http } from '../../services/http';
-import type { User } from '../../shared/types';
+import type { Device, User } from '../../shared/types';
 
 export interface LoginPayload {
   email: string;
   password: string;
   deviceId: string;
+  deviceName?: string;
+  userAgent?: string;
 }
 
 export interface RegisterPayload {
@@ -13,6 +15,8 @@ export interface RegisterPayload {
   name: string;
   schoolId: string;
   deviceId: string;
+  deviceName?: string;
+  userAgent?: string;
 }
 
 export interface AuthTokens {
@@ -57,6 +61,23 @@ export const authService = {
     avatarUrl?: string;
   }): Promise<User> {
     const res = await http.patch<{ data: User }>('/auth/me', data);
+    return res.data.data;
+  },
+
+  async listDevices(): Promise<Device[]> {
+    const res = await http.get<{ data: Device[] }>('/auth/devices');
+    return res.data.data;
+  },
+
+  async renameDevice(deviceId: string, name: string): Promise<Device> {
+    const res = await http.patch<{ data: Device }>(`/auth/devices/${encodeURIComponent(deviceId)}`, { name });
+    return res.data.data;
+  },
+
+  async revokeDevice(deviceId: string): Promise<{ revokedSelf: boolean }> {
+    const res = await http.delete<{ data: { revokedSelf: boolean } }>(
+      `/auth/devices/${encodeURIComponent(deviceId)}`,
+    );
     return res.data.data;
   },
 };

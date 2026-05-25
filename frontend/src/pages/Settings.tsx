@@ -1,8 +1,9 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import {
 	Icon,
 	Avatar,
@@ -27,6 +28,12 @@ import { useAuthStore } from "../modules/auth/authStore";
 import { authService } from "../modules/auth/auth.service";
 import { schoolsService } from "../modules/classrooms/schools.service";
 import { usePreferencesStore } from "../modules/sync/preferencesStore";
+import { useSyncStore } from "../modules/sync/syncStore";
+import { useDevices, useRenameDevice, useRevokeDevice } from "../modules/auth/useDevices";
+import { relativeTime } from "../shared/utils/relativeTime";
+import { disconnectSocket } from "../services/socket";
+import { db } from "../db";
+import type { Device, DeviceType } from "../shared/types";
 
 // ─── Schemas ──────────────────────────────────────────────
 const profileSchema = z.object({
@@ -57,6 +64,69 @@ export function PageSettings() {
 	// Auth
 	const user = useAuthStore((s) => s.user);
 	const updateUser = useAuthStore((s) => s.updateUser);
+	const clearAuth  = useAuthStore((s) => s.clearAuth);
+	const navigate   = useNavigate();
+
+	// Devices
+	const { data: devices, isLoading: isDevicesLoading } = useDevices();
+	const renameDeviceMut = useRenameDevice();
+	const revokeDeviceMut = useRevokeDevice();
+	const lanPeers = useSyncStore((s) => s.lanPeers);
+	const lanPeerIds = useMemo(() => new Set(lanPeers.map((p) => p.deviceId)), [lanPeers]);
+	const [renameDevice, setRenameDevice] = useState<Device | null>(null);
+	const [revokeTarget, setRevokeTarget] = useState<Device | null>(null);
+	const [renameValue, setRenameValue] = useState("");
+	const [nowTick, setNowTick] = useState(0);
+	useEffect(() => {
+		if (sub !== "devices") return;
+		const id = setInterval(() => setNowTick((t) => t + 1), 30_000);
+		return () => clearInterval(id);
+	}, [sub]);
+	// nowTick is read to keep relativeTime fresh; reference it to placate the linter.
+	void nowTick;
+
+	async function handleRevokeDevice(target: Device): Promise<void> {
+		try {
+			const result = await revokeDeviceMut.mutateAsync(target.deviceId);
+			setRevokeTarget(null);
+			if (result.revokedSelf) {
+				disconnectSocket();
+				const refreshToken = (await db.users.get(user?.id ?? ""))?.refreshToken;
+				if (refreshToken) await authService.logout(refreshToken).catch(() => {});
+				await clearAuth();
+				void navigate({ to: "/signin" });
+				return;
+			}
+			toast?.push({ type: "success", message: `Revoked ${target.name}.` });
+		} catch {
+			toast?.push({ type: "error", message: "Failed to revoke device." });
+		}
+	}
+
+	async function handleRenameDevice(target: Device, name: string): Promise<void> {
+		const trimmed = name.trim();
+		if (!trimmed || trimmed === target.name) {
+			setRenameDevice(null);
+			return;
+		}
+		try {
+			await renameDeviceMut.mutateAsync({ deviceId: target.deviceId, name: trimmed });
+			setRenameDevice(null);
+			toast?.push({ type: "success", message: "Device renamed." });
+		} catch {
+			toast?.push({ type: "error", message: "Failed to rename device." });
+		}
+	}
+
+	function deviceIcon(type: DeviceType): string {
+		switch (type) {
+			case "tablet":  return "tablet";
+			case "phone":   return "smartphone";
+			case "laptop":  return "laptop";
+			case "desktop": return "monitor";
+			default:        return "hard-drive";
+		}
+	}
 
 	// Sync preferences
 	const {
@@ -542,28 +612,72 @@ export function PageSettings() {
 						<SectionHeader
 							title="Devices"
 							subtitle="Paired with your account"
-							right={<Btn size="sm" variant="primary" icon="plus">Pair new</Btn>}
 						/>
-						<ul className="divide-y divide-line">
-							{((SYNC_STATE as any).devices as any[]).map((d: any, i: number) => (
-								<li key={i} className="flex items-center gap-3 py-3">
-									<span className="w-10 h-10 rounded-md bg-surface inline-flex items-center justify-center">
-										<Icon
-											name={d.role === "This device" ? "tablet" : d.role === "Cloud" ? "cloud" : "laptop"}
-											size={18}
-											className="text-navy/70"
-										/>
-									</span>
-									<div className="flex-1 min-w-0">
-										<div className="text-[13px] font-semibold text-navy">{d.name}</div>
-										<div className="text-[11px] text-muted">{d.role} · last seen {d.last}</div>
-									</div>
-									{d.role !== "This device" && (
-										<Btn variant="ghost" size="sm" icon="x">Revoke</Btn>
-									)}
-								</li>
-							))}
-						</ul>
+						{isDevicesLoading ? (
+							<div className="space-y-2">
+								{[...Array(3)].map((_, i) => (
+									<div key={i} className="h-14 rounded-md bg-slate-100 animate-pulse" />
+								))}
+							</div>
+						) : !devices || devices.length === 0 ? (
+							<p className="text-[13px] text-muted py-4">No paired devices.</p>
+						) : (
+							<>
+								<ul className="divide-y divide-line">
+									{devices.map((d) => {
+										const online = d.current || lanPeerIds.has(d.deviceId);
+										return (
+											<li key={d.deviceId} className="flex items-center gap-3 py-3">
+												<span className="relative w-10 h-10 rounded-md bg-surface inline-flex items-center justify-center">
+													<Icon name={deviceIcon(d.type)} size={18} className="text-navy/70" />
+													{online && (
+														<span
+															className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white"
+															title="Online"
+														/>
+													)}
+												</span>
+												<div className="flex-1 min-w-0">
+													<div className="flex items-center gap-2 min-w-0">
+														<div className="text-[13px] font-semibold text-navy truncate">{d.name}</div>
+														{d.current && (
+															<Badge status="primary" withDot={false}>This device</Badge>
+														)}
+													</div>
+													<div className="text-[11px] text-muted">
+														{online ? "Online now" : `last seen ${relativeTime(d.lastSeenAt)}`}
+													</div>
+												</div>
+												<div className="flex items-center gap-1">
+													<Btn
+														variant="ghost"
+														size="sm"
+														icon="pencil"
+														onClick={() => {
+															setRenameDevice(d);
+															setRenameValue(d.name);
+														}}
+													>
+														Rename
+													</Btn>
+													<Btn
+														variant="ghost"
+														size="sm"
+														icon="x"
+														onClick={() => setRevokeTarget(d)}
+													>
+														Revoke
+													</Btn>
+												</div>
+											</li>
+										);
+									})}
+								</ul>
+								<p className="mt-4 text-[11.5px] text-muted">
+									Sign in on another device to pair it.
+								</p>
+							</>
+						)}
 					</Card>
 				)}
 
@@ -622,6 +736,81 @@ export function PageSettings() {
 						Clearing the cache will discard them. Sync first if you need to keep them.
 					</span>
 				</div>
+			</Modal>
+
+			{/* ── Rename device modal ─────────────────────── */}
+			<Modal
+				open={renameDevice !== null}
+				onClose={() => setRenameDevice(null)}
+				title="Rename device"
+				subtitle="Pick a name you'll recognize later."
+				footer={
+					<>
+						<Btn variant="ghost" onClick={() => setRenameDevice(null)}>Cancel</Btn>
+						<Btn
+							variant="primary"
+							icon="save"
+							disabled={renameDeviceMut.isPending || renameValue.trim().length === 0}
+							onClick={() => renameDevice && void handleRenameDevice(renameDevice, renameValue)}
+						>
+							{renameDeviceMut.isPending ? "Saving…" : "Save"}
+						</Btn>
+					</>
+				}
+			>
+				<Field label="Device name">
+					<TextInput
+						autoFocus
+						value={renameValue}
+						maxLength={60}
+						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRenameValue(e.target.value)}
+						onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+							if (e.key === "Enter" && renameDevice) {
+								e.preventDefault();
+								void handleRenameDevice(renameDevice, renameValue);
+							}
+						}}
+					/>
+				</Field>
+			</Modal>
+
+			{/* ── Revoke device modal ─────────────────────── */}
+			<Modal
+				open={revokeTarget !== null}
+				onClose={() => setRevokeTarget(null)}
+				title={revokeTarget?.current ? "Sign out this device?" : "Revoke device?"}
+				subtitle={
+					revokeTarget?.current
+						? "You'll be signed out here and will need to sign in again."
+						: "The device will need to sign in again to access your account."
+				}
+				footer={
+					<>
+						<Btn variant="ghost" onClick={() => setRevokeTarget(null)}>Cancel</Btn>
+						<Btn
+							variant="danger"
+							icon="x"
+							disabled={revokeDeviceMut.isPending}
+							onClick={() => revokeTarget && void handleRevokeDevice(revokeTarget)}
+						>
+							{revokeDeviceMut.isPending
+								? "Revoking…"
+								: revokeTarget?.current
+									? "Sign out"
+									: "Revoke"}
+						</Btn>
+					</>
+				}
+			>
+				{revokeTarget && (
+					<div className="rounded-md bg-rose-50 border border-rose-200 p-3 text-[12.5px] text-rose-800 flex items-start gap-2">
+						<Icon name="alert-triangle" size={14} />
+						<span>
+							<span className="font-semibold">{revokeTarget.name}</span> will lose access on its next request.
+							Pending records on that device may not sync.
+						</span>
+					</div>
+				)}
 			</Modal>
 		</div>
 	);

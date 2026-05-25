@@ -5,6 +5,16 @@ export type SyncStatus = 'pending' | 'synced' | 'failed';
 export type Quarter = 'Q1' | 'Q2' | 'Q3' | 'Q4';
 export type UserRole = 'super_admin' | 'school_admin' | 'advisory_teacher' | 'subject_teacher';
 export type ConnectionMode = 'cloud' | 'lan' | 'offline';
+export type DeviceType = 'tablet' | 'laptop' | 'phone' | 'desktop' | 'other';
+
+export interface Device {
+  deviceId:   string;
+  name:       string;
+  type:       DeviceType;
+  current:    boolean;
+  createdAt:  string;
+  lastSeenAt: string;
+}
 
 export interface User {
   id: string;

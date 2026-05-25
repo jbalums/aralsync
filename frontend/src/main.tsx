@@ -54,6 +54,7 @@ function AppRoot() {
       if (isAuthed && u?.schoolId && (!wasAuthed || prev.user?.id !== u.id)) {
         connectSocket({
           schoolId:   u.schoolId,
+          userId:     u.id,
           deviceId:   u.deviceId,
           deviceName: u.name || 'Device',
           role:       u.role,

@@ -26,7 +26,7 @@ async function seedOwner(): Promise<void> {
         position: 'Platform Owner',
       },
       $setOnInsert: {
-        deviceIds: [],
+        devices: [],
         refreshTokens: [],
       },
     },

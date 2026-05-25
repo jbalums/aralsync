@@ -74,7 +74,14 @@ export interface IUser {
   position: string;
   schoolId?: string;
   role: Role;
-  deviceIds: string[];
+  devices: {
+    deviceId: string;
+    name: string;
+    type: 'tablet' | 'laptop' | 'phone' | 'desktop' | 'other';
+    userAgent: string;
+    createdAt: Date;
+    lastSeenAt: Date;
+  }[];
   refreshTokens: string[];
   isActive: boolean;
 }

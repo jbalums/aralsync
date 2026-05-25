@@ -1,9 +1,10 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
-import { User, IUserDocument } from '../../database/models/User.model';
+import { User, IUserDocument, IDevice } from '../../database/models/User.model';
 import { School } from '../../database/models/School.model';
 import { Role, JwtPayload } from '../../shared/types';
+import { inferDeviceInfo } from '../../shared/utils/userAgent';
 
 const ACCESS_EXPIRES = process.env.JWT_ACCESS_EXPIRES ?? '15m';
 const REFRESH_EXPIRES = process.env.JWT_REFRESH_EXPIRES ?? '7d';
@@ -40,6 +41,48 @@ function toClientUser(user: IUserDocument, deviceId: string) {
   };
 }
 
+function toDeviceDto(d: IDevice, currentDeviceId: string) {
+  return {
+    deviceId:   d.deviceId,
+    name:       d.name,
+    type:       d.type,
+    current:    d.deviceId === currentDeviceId,
+    createdAt:  d.createdAt.toISOString(),
+    lastSeenAt: d.lastSeenAt.toISOString(),
+  };
+}
+
+function buildDevice(opts: {
+  deviceId: string;
+  deviceName?: string;
+  userAgent?: string;
+}): IDevice {
+  const ua = opts.userAgent ?? '';
+  const inferred = inferDeviceInfo(ua);
+  const now = new Date();
+  return {
+    deviceId:   opts.deviceId,
+    name:       opts.deviceName?.trim() || inferred.name,
+    type:       inferred.type,
+    userAgent:  ua,
+    createdAt:  now,
+    lastSeenAt: now,
+  };
+}
+
+function upsertDevice(
+  user: IUserDocument,
+  opts: { deviceId: string; deviceName?: string; userAgent?: string },
+): void {
+  const existing = user.devices.find(d => d.deviceId === opts.deviceId);
+  if (existing) {
+    existing.lastSeenAt = new Date();
+    if (opts.userAgent && !existing.userAgent) existing.userAgent = opts.userAgent;
+    return;
+  }
+  user.devices.push(buildDevice(opts));
+}
+
 export const authService = {
   async register(data: {
     email: string;
@@ -47,6 +90,8 @@ export const authService = {
     name: string;
     schoolId: string;
     deviceId: string;
+    deviceName?: string;
+    userAgent?: string;
   }) {
     const existing = await User.findOne({ email: data.email.toLowerCase() });
     if (existing) {
@@ -69,7 +114,7 @@ export const authService = {
       fullName: data.name,
       schoolId: school._id,
       role: Role.SUBJECT_TEACHER,
-      deviceIds: [data.deviceId],
+      devices: [buildDevice({ deviceId: data.deviceId, deviceName: data.deviceName, userAgent: data.userAgent })],
       refreshTokens: [],
     });
 
@@ -88,7 +133,13 @@ export const authService = {
     return { user: toClientUser(user, data.deviceId), tokens };
   },
 
-  async login(data: { email: string; password: string; deviceId: string }) {
+  async login(data: {
+    email: string;
+    password: string;
+    deviceId: string;
+    deviceName?: string;
+    userAgent?: string;
+  }) {
     const user = await User.findOne({ email: data.email.toLowerCase(), isActive: true }).select(
       '+passwordHash +refreshTokens',
     );
@@ -101,9 +152,7 @@ export const authService = {
       throw Object.assign(new Error('Invalid email or password'), { statusCode: 401 });
     }
 
-    if (!user.deviceIds.includes(data.deviceId)) {
-      user.deviceIds.push(data.deviceId);
-    }
+    upsertDevice(user, data);
 
     const tokens = issueTokens(
       (user._id as mongoose.Types.ObjectId).toString(),
@@ -114,7 +163,6 @@ export const authService = {
       data.deviceId,
     );
 
-    // keep only last 10 refresh tokens per user
     user.refreshTokens = [...user.refreshTokens.slice(-9), tokens.refreshToken];
     user.lastSeenAt = new Date();
     await user.save();
@@ -138,13 +186,23 @@ export const authService = {
       throw Object.assign(new Error('Refresh token revoked'), { statusCode: 401 });
     }
 
+    const deviceId = payload.deviceId ?? '';
+    const device = user.devices.find(d => d.deviceId === deviceId);
+    if (deviceId && !device) {
+      // Device was revoked while this token was still in the array. Kill it.
+      user.refreshTokens = user.refreshTokens.filter(t => t !== refreshToken);
+      await user.save();
+      throw Object.assign(new Error('Device revoked'), { statusCode: 401 });
+    }
+    if (device) device.lastSeenAt = new Date();
+
     const tokens = issueTokens(
       payload.userId,
       user.fullName,
       payload.email,
       payload.role,
       payload.schoolId,
-      payload.deviceId ?? '',
+      deviceId,
     );
 
     user.refreshTokens = user.refreshTokens
@@ -165,7 +223,7 @@ export const authService = {
         process.env.JWT_REFRESH_SECRET as string,
       ) as JwtPayload;
     } catch {
-      return; // token already expired, treat as logged out
+      return;
     }
 
     await User.findByIdAndUpdate(payload.userId, {
@@ -173,17 +231,17 @@ export const authService = {
     });
   },
 
-  async me(userId: string) {
+  async me(userId: string, currentDeviceId: string) {
     const user = await User.findById(userId);
     if (!user) {
       throw Object.assign(new Error('User not found'), { statusCode: 404 });
     }
-    // deviceId not critical for /me — return first device
-    return toClientUser(user, user.deviceIds[0] ?? '');
+    return toClientUser(user, currentDeviceId || user.devices[0]?.deviceId || '');
   },
 
   async updateProfile(
     userId: string,
+    currentDeviceId: string,
     data: { name?: string; employeeNumber?: string; position?: string; avatarUrl?: string },
   ) {
     const update: Record<string, string> = {};
@@ -196,6 +254,56 @@ export const authService = {
     if (!user) {
       throw Object.assign(new Error('User not found'), { statusCode: 404 });
     }
-    return toClientUser(user, user.deviceIds[0] ?? '');
+    return toClientUser(user, currentDeviceId || user.devices[0]?.deviceId || '');
+  },
+
+  async listDevices(userId: string, currentDeviceId: string) {
+    const user = await User.findById(userId);
+    if (!user) throw Object.assign(new Error('User not found'), { statusCode: 404 });
+    return [...user.devices]
+      .sort((a, b) => b.lastSeenAt.getTime() - a.lastSeenAt.getTime())
+      .map(d => toDeviceDto(d, currentDeviceId));
+  },
+
+  async renameDevice(userId: string, deviceId: string, name: string, currentDeviceId: string) {
+    const user = await User.findById(userId);
+    if (!user) throw Object.assign(new Error('User not found'), { statusCode: 404 });
+    const device = user.devices.find(d => d.deviceId === deviceId);
+    if (!device) throw Object.assign(new Error('Device not found'), { statusCode: 404 });
+    device.name = name.trim();
+    await user.save();
+    return toDeviceDto(device, currentDeviceId);
+  },
+
+  async revokeDevice(userId: string, deviceId: string, currentDeviceId: string) {
+    const user = await User.findById(userId).select('+refreshTokens');
+    if (!user) throw Object.assign(new Error('User not found'), { statusCode: 404 });
+
+    const before = user.devices.length;
+    user.devices = user.devices.filter(d => d.deviceId !== deviceId);
+    if (user.devices.length === before) {
+      throw Object.assign(new Error('Device not found'), { statusCode: 404 });
+    }
+
+    // Drop refresh tokens that belong to this device (decode each; keep undecodable + non-matching).
+    user.refreshTokens = user.refreshTokens.filter(token => {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET as string) as JwtPayload;
+        return decoded.deviceId !== deviceId;
+      } catch {
+        return false;
+      }
+    });
+
+    await user.save();
+    return { revokedSelf: deviceId === currentDeviceId };
+  },
+
+  async touchDevice(userId: string, deviceId: string): Promise<void> {
+    if (!userId || !deviceId) return;
+    await User.updateOne(
+      { _id: userId, 'devices.deviceId': deviceId },
+      { $set: { 'devices.$.lastSeenAt': new Date() } },
+    ).catch(() => undefined);
   },
 };

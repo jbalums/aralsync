@@ -11,6 +11,7 @@ let pingInterval: ReturnType<typeof setInterval> | null = null;
 
 export interface JoinPayload {
   schoolId:   string;
+  userId:     string;
   deviceId:   string;
   deviceName: string;
   role:       UserRole;

@@ -5,16 +5,13 @@ import { z } from "zod";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { authService } from "../modules/auth/auth.service";
 import { useAuthStore } from "../modules/auth/authStore";
+import { getOrCreateDeviceId, getUserAgent } from "../shared/utils/deviceId";
 
 const schema = z.object({
 	email: z.string().min(1, "Email is required").email("Invalid email"),
 	password: z.string().min(1, "Password is required"),
 });
 type FormValues = z.infer<typeof schema>;
-
-function generateDeviceId(): string {
-	return btoa(`${navigator.userAgent}-${Date.now()}`).slice(0, 32);
-}
 
 export default function SignIn() {
 	const navigate = useNavigate();
@@ -35,7 +32,8 @@ export default function SignIn() {
 		try {
 			const result = await authService.login({
 				...values,
-				deviceId: generateDeviceId(),
+				deviceId: getOrCreateDeviceId(),
+				userAgent: getUserAgent(),
 			});
 			await setAuth(
 				result.user,
