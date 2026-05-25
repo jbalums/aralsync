@@ -2,6 +2,7 @@ export { GradeLevelCombobox } from "./GradeLevelCombobox";
 export { SubjectCombobox } from "./SubjectCombobox";
 export { ClassLoadCard } from "./ClassLoadCard";
 export { CreateClassModal } from "./CreateClassModal";
+export { AdminClassModal } from "./AdminClassModal";
 export { ClassSettingsModal } from "./ClassSettingsModal";
 export { ClassSlotsEditor } from "./ClassSlotsEditor";
 export { ClassOverviewTab } from "./ClassOverviewTab";
