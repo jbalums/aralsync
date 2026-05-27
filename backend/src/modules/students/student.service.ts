@@ -17,7 +17,7 @@ function toClientStudent(s: {
   lrn: string;
   lastName: string;
   firstName: string;
-  middleInitial: string;
+  middleName: string;
   gender: string;
   birthday?: Date;
   sectionId: mongoose.Types.ObjectId;
@@ -30,7 +30,7 @@ function toClientStudent(s: {
     sectionId:     s.sectionId.toString(),
     lastName:      s.lastName,
     firstName:     s.firstName,
-    middleInitial: s.middleInitial,
+    middleName: s.middleName,
     gender:        s.gender,
     birthday:      s.birthday?.toISOString().slice(0, 10),
     guardian:      s.guardian,
@@ -99,7 +99,7 @@ export const studentService = {
     lrn: string;
     lastName: string;
     firstName: string;
-    middleInitial?: string;
+    middleName?: string;
     gender: 'M' | 'F';
     birthday?: string;
     classLoadId: string;
@@ -124,7 +124,7 @@ export const studentService = {
       lrn:           dto.lrn,
       lastName:      dto.lastName,
       firstName:     dto.firstName,
-      middleInitial: dto.middleInitial ?? '',
+      middleName: dto.middleName ?? '',
       gender:        dto.gender,
       birthday:      dto.birthday ? new Date(dto.birthday) : undefined,
       sectionId:     load.sectionId,
@@ -138,7 +138,7 @@ export const studentService = {
   async update(id: string, dto: {
     lastName?: string;
     firstName?: string;
-    middleInitial?: string;
+    middleName?: string;
     gender?: 'M' | 'F';
     birthday?: string;
     guardian?: { name: string; relationship: string; contactNumber: string };
@@ -151,7 +151,7 @@ export const studentService = {
 
     if (dto.lastName)      student.lastName      = dto.lastName;
     if (dto.firstName)     student.firstName     = dto.firstName;
-    if (dto.middleInitial !== undefined) student.middleInitial = dto.middleInitial;
+    if (dto.middleName !== undefined) student.middleName = dto.middleName;
     if (dto.gender)        student.gender        = dto.gender;
     if (dto.birthday)      student.birthday      = new Date(dto.birthday);
     if (dto.guardian)      student.guardian      = dto.guardian;
@@ -190,7 +190,7 @@ export const studentService = {
     lrn: string;
     lastName: string;
     firstName: string;
-    middleInitial?: string;
+    middleName?: string;
     gender: 'M' | 'F';
     birthday?: string;
     guardian?: { name: string; relationship: string; contactNumber: string };
@@ -217,7 +217,7 @@ export const studentService = {
         if (existing) {
           existing.lastName      = row.lastName;
           existing.firstName     = row.firstName;
-          existing.middleInitial = row.middleInitial ?? '';
+          existing.middleName = row.middleName ?? '';
           existing.gender        = row.gender;
           if (row.birthday) existing.birthday = new Date(row.birthday);
           if (row.guardian) existing.guardian = row.guardian;
@@ -230,7 +230,7 @@ export const studentService = {
             lrn:           row.lrn,
             lastName:      row.lastName,
             firstName:     row.firstName,
-            middleInitial: row.middleInitial ?? '',
+            middleName: row.middleName ?? '',
             gender:        row.gender,
             birthday:      row.birthday ? new Date(row.birthday) : undefined,
             sectionId:     load.sectionId,

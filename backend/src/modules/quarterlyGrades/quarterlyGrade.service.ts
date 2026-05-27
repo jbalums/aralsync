@@ -142,7 +142,7 @@ export const quarterlyGradeService = {
         id:            (student._id as mongoose.Types.ObjectId).toString(),
         lastName:      student.lastName,
         firstName:     student.firstName,
-        middleInitial: student.middleInitial,
+        middleName: student.middleName,
         lrn:           student.lrn,
         sectionName:   section?.name ?? '',
         gradeLevel:    section?.gradeLevel ?? 0,

@@ -421,7 +421,7 @@ export function PageGradebook() {
                           <Avatar name={`${student.firstName} ${student.lastName}`} size="sm" />
                           <div className="min-w-0">
                             <div className="text-[13px] font-semibold text-navy truncate">
-                              {student.lastName}, {student.firstName}{student.middleInitial ? ` ${student.middleInitial}.` : ''}
+                              {student.lastName}, {student.firstName}{student.middleName ? ` ${student.middleName.slice(0, 1)}.` : ''}
                             </div>
                             <div className="text-[10.5px] text-muted font-mono">LRN ••• {student.lrn.slice(-4)}</div>
                           </div>

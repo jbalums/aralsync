@@ -83,7 +83,7 @@ export interface Student {
   sectionId: string;
   lastName: string;
   firstName: string;
-  middleInitial?: string;
+  middleName?: string;
   gender: 'M' | 'F';
   birthday?: string;
   guardian?: { name: string; relationship: string; contactNumber: string };

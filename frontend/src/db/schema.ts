@@ -43,6 +43,26 @@ class AralSyncDB extends Dexie {
           item.status = (item.retries ?? 0) >= 5 ? 'failed' : 'pending';
         });
       });
+
+    // v3: rename Student.middleInitial → middleName (full middle name). Also
+    // rewrite any in-flight sync-queue payloads that still carry middleInitial.
+    this.version(3).upgrade(async (tx) => {
+      await tx.table('students').toCollection().modify((s: Student & { middleInitial?: string }) => {
+        if (s.middleInitial !== undefined) {
+          s.middleName = s.middleName ?? s.middleInitial;
+          delete s.middleInitial;
+        }
+      });
+      await tx.table('syncQueue')
+        .where('tableName').equals('students')
+        .modify((item: SyncQueueItem & { payload: Record<string, unknown> }) => {
+          const p = item.payload as Record<string, unknown> | undefined;
+          if (p && 'middleInitial' in p) {
+            if (p.middleName === undefined) p.middleName = p.middleInitial;
+            delete p.middleInitial;
+          }
+        });
+    });
   }
 }
 

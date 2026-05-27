@@ -41,7 +41,7 @@ export interface ReportCard {
     id:            string;
     lastName:      string;
     firstName:     string;
-    middleInitial: string;
+    middleName: string;
     lrn:           string;
     sectionName:   string;
     gradeLevel:    number;

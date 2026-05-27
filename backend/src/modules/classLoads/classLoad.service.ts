@@ -282,7 +282,7 @@ export const classLoadService = {
       sectionId: s.sectionId.toString(),
       lastName: s.lastName,
       firstName: s.firstName,
-      middleInitial: s.middleInitial,
+      middleName: s.middleName,
       gender: s.gender,
       birthday: s.birthday?.toISOString().slice(0, 10),
     }));

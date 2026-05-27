@@ -142,7 +142,7 @@ export interface IStudent {
   lrn: string;
   lastName: string;
   firstName: string;
-  middleInitial: string;
+  middleName: string;
   gender: string;
   birthday: Date;
   sectionId: string;

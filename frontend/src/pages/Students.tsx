@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { useForm, type FieldValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,6 +20,7 @@ import {
   useDeleteStudent,
 } from '../modules/students/useStudents';
 import { useClassLoads } from '../modules/classrooms/useClassLoads';
+import { useAuthStore } from '../modules/auth/authStore';
 import { validateLRN } from '../shared/utils/lrn';
 import type { ImportResult, StudentImportRow } from '../modules/students/students.service';
 import type { ClassLoadListItem, Student } from '../shared/types';
@@ -29,7 +30,7 @@ const addSchema = z.object({
   lrn:           z.string().length(12, 'LRN must be 12 digits').regex(/^\d{12}$/, 'LRN must contain only digits'),
   lastName:      z.string().min(1, 'Required'),
   firstName:     z.string().min(1, 'Required'),
-  middleInitial: z.string().max(2).optional(),
+  middleName:    z.string().max(60).optional(),
   gender:        z.enum(['M', 'F']),
   birthday:      z.string().optional(),
   classLoadId:   z.string().min(1, 'Select a class'),
@@ -42,7 +43,7 @@ type AddFormValues = z.infer<typeof addSchema>;
 const editSchema = z.object({
   lastName:             z.string().min(1, 'Required'),
   firstName:            z.string().min(1, 'Required'),
-  middleInitial:        z.string().max(2).optional(),
+  middleName:           z.string().max(60).optional(),
   gender:               z.enum(['M', 'F']),
   birthday:             z.string().optional(),
   guardianName:         z.string().optional(),
@@ -60,7 +61,7 @@ function normalizeImportRow(raw: Record<string, string>): StudentImportRow | nul
     lrn,
     lastName:      raw['LAST_NAME'] ?? raw['lastName'] ?? raw['last_name'] ?? '',
     firstName:     raw['FIRST_NAME'] ?? raw['firstName'] ?? raw['first_name'] ?? '',
-    middleInitial: raw['MI'] ?? raw['middleInitial'] ?? '',
+    middleName: raw['MIDDLE_NAME'] ?? raw['middleName'] ?? raw['middle_name'] ?? raw['MI'] ?? '',
     gender:        (gender === 'M' || gender === 'MALE') ? 'M' : 'F',
     birthday:      raw['BIRTHDAY'] ?? raw['birthday'] ?? undefined,
     guardian: (raw['GUARDIAN_NAME'] ?? raw['guardianName'])
@@ -69,6 +70,85 @@ function normalizeImportRow(raw: Record<string, string>): StudentImportRow | nul
           relationship:  raw['GUARDIAN_RELATIONSHIP'] ?? raw['guardianRelationship'] ?? '',
           contactNumber: raw['GUARDIAN_CONTACT'] ?? raw['guardianContact'] ?? '',
         }
+      : undefined,
+  };
+}
+
+// ─── Paste-CSV column-order catalog ──────────────────────
+type ImportField =
+  | 'lrn' | 'lastName' | 'firstName' | 'middleName'
+  | 'gender' | 'birthday'
+  | 'guardianName' | 'guardianRelationship' | 'guardianContact'
+  | 'skip';
+
+const FIELD_LABELS: Record<ImportField, string> = {
+  lrn:                  'LRN',
+  lastName:             'Last Name',
+  firstName:            'First Name',
+  middleName:           'Middle Name',
+  gender:               'Gender (M/F)',
+  birthday:             'Birthday',
+  guardianName:         'Guardian Name',
+  guardianRelationship: 'Guardian Rel.',
+  guardianContact:      'Guardian Contact',
+  skip:                 '— Skip —',
+};
+
+const FIELD_SAMPLE: Record<ImportField, string> = {
+  lrn:                  '105432100023',
+  lastName:             'dela Cruz',
+  firstName:            'Juan',
+  middleName:           'Reyes',
+  gender:               'M',
+  birthday:             '2012-03-19',
+  guardianName:         'Ana dela Cruz',
+  guardianRelationship: 'Mother',
+  guardianContact:      '09171234567',
+  skip:                 '',
+};
+
+const REQUIRED_FIELDS: ImportField[] = ['lrn', 'lastName', 'firstName', 'gender'];
+const DEFAULT_COLUMN_ORDER: ImportField[] = [
+  'lrn', 'lastName', 'firstName', 'middleName', 'gender', 'birthday',
+];
+const ALL_FIELDS: ImportField[] = [
+  'lrn', 'lastName', 'firstName', 'middleName', 'gender', 'birthday',
+  'guardianName', 'guardianRelationship', 'guardianContact', 'skip',
+];
+
+function mapRowByOrder(
+  cols: string[],
+  order: ImportField[],
+): StudentImportRow | { error: string } {
+  const pick = (f: ImportField): string => {
+    const idx = order.indexOf(f);
+    return idx >= 0 ? (cols[idx] ?? '').toString().trim() : '';
+  };
+
+  const lrn = pick('lrn').replace(/\D/g, '').slice(0, 12);
+  if (lrn.length !== 12) return { error: `invalid LRN "${pick('lrn')}"` };
+
+  const lastName  = pick('lastName');
+  const firstName = pick('firstName');
+  if (!lastName)  return { error: 'missing last name' };
+  if (!firstName) return { error: 'missing first name' };
+
+  const genderRaw = pick('gender').toUpperCase();
+  const gender: 'M' | 'F' = (genderRaw === 'M' || genderRaw === 'MALE') ? 'M' : 'F';
+
+  const guardianName         = pick('guardianName');
+  const guardianRelationship = pick('guardianRelationship');
+  const guardianContact      = pick('guardianContact');
+
+  return {
+    lrn,
+    lastName,
+    firstName,
+    middleName: pick('middleName') || undefined,
+    gender,
+    birthday:      pick('birthday') || undefined,
+    guardian: guardianName
+      ? { name: guardianName, relationship: guardianRelationship, contactNumber: guardianContact }
       : undefined,
   };
 }
@@ -146,7 +226,7 @@ export function PageStudents() {
                       <div className="flex items-center gap-2.5">
                         <Avatar name={`${s.firstName} ${s.lastName}`} size="sm"/>
                         <span className="font-semibold text-navy">
-                          {s.lastName}, {s.firstName}{s.middleInitial ? ` ${s.middleInitial.slice(0,1)}.` : ''}
+                          {s.lastName}, {s.firstName}{s.middleName ? ` ${s.middleName.slice(0,1)}.` : ''}
                         </span>
                       </div>
                     </td>
@@ -229,7 +309,7 @@ function AddStudentModal({ open, onClose, classLoads, onSuccess }: AddStudentMod
         lrn:           values.lrn,
         lastName:      values.lastName,
         firstName:     values.firstName,
-        middleInitial: values.middleInitial,
+        middleName: values.middleName,
         gender:        values.gender,
         birthday:      values.birthday,
         classLoadId:   values.classLoadId,
@@ -307,8 +387,8 @@ function AddStudentModal({ open, onClose, classLoads, onSuccess }: AddStudentMod
         <Field label="First name" required error={errors.firstName?.message}>
           <TextInput placeholder="Juan" {...register('firstName')}/>
         </Field>
-        <Field label="Middle initial">
-          <TextInput placeholder="R" maxLength={2} {...register('middleInitial')}/>
+        <Field label="Middle name">
+          <TextInput placeholder="Reyes" {...register('middleName')}/>
         </Field>
         <Field label="Gender">
           <Select {...register('gender')}>
@@ -352,11 +432,86 @@ interface ImportCSVModalProps {
 
 function ImportCSVModal({ open, onClose, classLoads, onSuccess }: ImportCSVModalProps) {
   const importMutation = useImportStudents();
+  const userId = useAuthStore((s) => s.user?.id ?? '');
   const fileRef = useRef<HTMLInputElement>(null);
   const [rows, setRows] = useState<StudentImportRow[]>([]);
   const [parseError, setParseError] = useState('');
   const [classLoadId, setClassLoadId] = useState('');
   const [result, setResult] = useState<ImportResult | null>(null);
+  const [tab, setTab] = useState<'file' | 'paste'>('file');
+  const [pasteText, setPasteText] = useState('');
+  const [columnOrder, setColumnOrder] = useState<ImportField[]>(DEFAULT_COLUMN_ORDER);
+  const [rejectedCount, setRejectedCount] = useState(0);
+  const [rejectedSample, setRejectedSample] = useState<string[]>([]);
+
+  const storageKey = userId ? `aralsync.importColumnOrder.${userId}` : '';
+
+  // Load persisted column order on mount / user change
+  useEffect(() => {
+    if (!storageKey) return;
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed) && parsed.every((f) => ALL_FIELDS.includes(f as ImportField))) {
+        setColumnOrder(parsed as ImportField[]);
+      }
+    } catch { /* ignore */ }
+  }, [storageKey]);
+
+  const persistOrder = useCallback((order: ImportField[]) => {
+    setColumnOrder(order);
+    if (storageKey) {
+      try { localStorage.setItem(storageKey, JSON.stringify(order)); } catch { /* ignore quota */ }
+    }
+  }, [storageKey]);
+
+  const parseFileWorkbook = useCallback((wb: XLSX.WorkBook) => {
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json<Record<string, string>>(ws, { defval: '' });
+    const parsed = raw.map(normalizeImportRow).filter(Boolean) as StudentImportRow[];
+    if (parsed.length === 0) {
+      setParseError('No valid rows found. Check the column headers match the template.');
+      setRows([]);
+    } else {
+      setParseError('');
+      setRows(parsed);
+    }
+  }, []);
+
+  const parsePasteMatrix = useCallback((order: ImportField[], text: string) => {
+    const cleaned = text.replace(/^﻿/, '').replace(/[\r\n]+$/g, '');
+    if (!cleaned.trim()) {
+      setRows([]); setParseError(''); setRejectedCount(0); setRejectedSample([]);
+      return;
+    }
+    try {
+      const wb = XLSX.read(cleaned, { type: 'string' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const matrix = XLSX.utils.sheet_to_json<string[]>(ws, { header: 1, defval: '' });
+      const parsed: StudentImportRow[] = [];
+      const rejected: string[] = [];
+      matrix.forEach((cols, i) => {
+        if (!cols || cols.every((c) => !String(c).trim())) return; // skip blank rows
+        const r = mapRowByOrder(cols as string[], order);
+        if ('error' in r) rejected.push(`row ${i + 1}: ${r.error}`);
+        else parsed.push(r);
+      });
+      setRows(parsed);
+      setRejectedCount(rejected.length);
+      setRejectedSample(rejected.slice(0, 3));
+      if (parsed.length === 0 && rejected.length === 0) {
+        setParseError('No rows detected.');
+      } else if (parsed.length === 0) {
+        setParseError('No valid rows. Check column order matches your pasted data.');
+      } else {
+        setParseError('');
+      }
+    } catch {
+      setParseError('Failed to parse pasted text. Ensure it is comma-separated.');
+      setRows([]); setRejectedCount(0); setRejectedSample([]);
+    }
+  }, []);
 
   const handleFile = useCallback((file: File) => {
     setParseError('');
@@ -365,20 +520,43 @@ function ImportCSVModal({ open, onClose, classLoads, onSuccess }: ImportCSVModal
     reader.onload = (e) => {
       try {
         const wb = XLSX.read(e.target?.result, { type: 'binary' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const raw = XLSX.utils.sheet_to_json<Record<string, string>>(ws, { defval: '' });
-        const parsed = raw.map(normalizeImportRow).filter(Boolean) as StudentImportRow[];
-        if (parsed.length === 0) {
-          setParseError('No valid rows found. Check the column headers match the template.');
-        } else {
-          setRows(parsed);
-        }
+        parseFileWorkbook(wb);
       } catch {
         setParseError('Failed to parse file. Ensure it is a valid CSV or Excel file.');
       }
     };
     reader.readAsBinaryString(file);
-  }, []);
+  }, [parseFileWorkbook]);
+
+  const handlePaste = useCallback((text: string) => {
+    setPasteText(text);
+    parsePasteMatrix(columnOrder, text);
+  }, [columnOrder, parsePasteMatrix]);
+
+  // Re-parse when column order changes while text is present
+  useEffect(() => {
+    if (tab === 'paste' && pasteText) parsePasteMatrix(columnOrder, pasteText);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columnOrder]);
+
+  const missingRequired = REQUIRED_FIELDS.filter((f) => !columnOrder.includes(f));
+
+  const moveColumn = (idx: number, delta: number) => {
+    const next = [...columnOrder];
+    const j = idx + delta;
+    if (j < 0 || j >= next.length) return;
+    [next[idx], next[j]] = [next[j], next[idx]];
+    persistOrder(next);
+  };
+  const removeColumn = (idx: number) => {
+    const next = columnOrder.filter((_, i) => i !== idx);
+    persistOrder(next);
+  };
+  const addColumn = (f: ImportField) => {
+    if (f !== 'skip' && columnOrder.includes(f)) return;
+    persistOrder([...columnOrder, f]);
+  };
+  const resetOrder = () => persistOrder(DEFAULT_COLUMN_ORDER);
 
   const onDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -393,7 +571,17 @@ function ImportCSVModal({ open, onClose, classLoads, onSuccess }: ImportCSVModal
     onSuccess?.(r);
   };
 
-  const reset = () => { setRows([]); setParseError(''); setClassLoadId(''); setResult(null); };
+  const reset = () => {
+    setRows([]); setParseError(''); setClassLoadId(''); setResult(null);
+    setTab('file'); setPasteText('');
+    setRejectedCount(0); setRejectedSample([]);
+  };
+
+  const importDisabled =
+    rows.length === 0 ||
+    !classLoadId ||
+    importMutation.isPending ||
+    (tab === 'paste' && missingRequired.length > 0);
 
   return (
     <Modal
@@ -406,7 +594,7 @@ function ImportCSVModal({ open, onClose, classLoads, onSuccess }: ImportCSVModal
         <Btn variant="ghost" onClick={() => { onClose(); reset(); }}>Cancel</Btn>
         <Btn variant="primary" icon="upload"
           onClick={() => { void handleImport(); }}
-          disabled={rows.length === 0 || !classLoadId || importMutation.isPending}
+          disabled={importDisabled}
         >
           {importMutation.isPending ? 'Importing…' : `Import ${rows.length} row${rows.length !== 1 ? 's' : ''}`}
         </Btn>
@@ -444,25 +632,124 @@ function ImportCSVModal({ open, onClose, classLoads, onSuccess }: ImportCSVModal
         </div>
       ) : (
         <div className="space-y-4">
-          <div
-            onDrop={onDrop}
-            onDragOver={(e) => e.preventDefault()}
-            onClick={() => fileRef.current?.click()}
-            className="rounded-md border-2 border-dashed border-line bg-surface/50 p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
-          >
-            <Icon name="upload-cloud" size={36} className="text-primary mx-auto"/>
-            <div className="text-[14px] font-semibold text-navy mt-3">
-              {rows.length > 0 ? `${rows.length} rows ready` : 'Drop a CSV / Excel file here'}
+          <Tabs
+            tabs={[
+              { id: 'file',  label: 'Upload file', icon: 'upload-cloud' },
+              { id: 'paste', label: 'Paste CSV',   icon: 'clipboard' },
+            ]}
+            active={tab}
+            onChange={(id: 'file' | 'paste') => setTab(id)}
+          />
+
+          {tab === 'file' ? (
+            <div
+              onDrop={onDrop}
+              onDragOver={(e) => e.preventDefault()}
+              onClick={() => fileRef.current?.click()}
+              className="rounded-md border-2 border-dashed border-line bg-surface/50 p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+            >
+              <Icon name="upload-cloud" size={36} className="text-primary mx-auto"/>
+              <div className="text-[14px] font-semibold text-navy mt-3">
+                {rows.length > 0 ? `${rows.length} rows ready` : 'Drop a CSV / Excel file here'}
+              </div>
+              <div className="text-[12px] text-muted mt-1">or <span className="text-primary font-semibold">browse files</span> · max 5 MB · UTF-8</div>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+              />
             </div>
-            <div className="text-[12px] text-muted mt-1">or <span className="text-primary font-semibold">browse files</span> · max 5 MB · UTF-8</div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".csv,.xlsx,.xls"
-              className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
-            />
-          </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="rounded-md border border-line bg-surface/40 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-[12px] font-semibold text-navy">Your column format</div>
+                  <button
+                    type="button"
+                    onClick={resetOrder}
+                    className="text-[11.5px] text-primary hover:underline font-semibold"
+                  >Reset to default</button>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {columnOrder.map((f, i) => (
+                    <div
+                      key={`${f}-${i}`}
+                      className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11.5px] ${f === 'skip' ? 'border-dashed border-line bg-white text-muted' : 'border-primary/30 bg-primary/5 text-navy'}`}
+                    >
+                      <span className="font-mono text-muted">#{i + 1}</span>
+                      <span className="font-semibold">{FIELD_LABELS[f]}</span>
+                      <button
+                        type="button"
+                        onClick={() => moveColumn(i, -1)}
+                        disabled={i === 0}
+                        className="px-1 text-muted hover:text-navy disabled:opacity-30 disabled:cursor-not-allowed"
+                        aria-label="Move left"
+                      >◀</button>
+                      <button
+                        type="button"
+                        onClick={() => moveColumn(i, +1)}
+                        disabled={i === columnOrder.length - 1}
+                        className="px-1 text-muted hover:text-navy disabled:opacity-30 disabled:cursor-not-allowed"
+                        aria-label="Move right"
+                      >▶</button>
+                      <button
+                        type="button"
+                        onClick={() => removeColumn(i)}
+                        className="px-1 text-red-500 hover:text-red-700"
+                        aria-label="Remove column"
+                      >×</button>
+                    </div>
+                  ))}
+                  <Select
+                    value=""
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                      const v = e.target.value as ImportField;
+                      if (v) addColumn(v);
+                    }}
+                    className="text-[11.5px] py-1 px-2 w-auto"
+                  >
+                    <option value="">+ Add column…</option>
+                    {ALL_FIELDS.filter((f) => f === 'skip' || !columnOrder.includes(f)).map((f) => (
+                      <option key={f} value={f}>{FIELD_LABELS[f]}</option>
+                    ))}
+                  </Select>
+                </div>
+                {missingRequired.length > 0 && (
+                  <div className="text-[11.5px] text-red-600">
+                    Add {missingRequired.map((f) => FIELD_LABELS[f]).join(', ')} to your column format before importing.
+                  </div>
+                )}
+                <div className="text-[11.5px] text-muted">
+                  Sample row:{' '}
+                  <span className="font-mono text-navy">
+                    {columnOrder.map((f) => FIELD_SAMPLE[f]).join(',') || '—'}
+                  </span>
+                </div>
+              </div>
+
+              <textarea
+                value={pasteText}
+                onChange={(e) => handlePaste(e.target.value)}
+                placeholder={columnOrder.map((f) => FIELD_SAMPLE[f]).join(',') + '\n…'}
+                rows={8}
+                spellCheck={false}
+                className="w-full rounded-md border border-line bg-white px-3 py-2 text-[12.5px] font-mono text-navy placeholder:text-muted/70 focus:border-primary focus:outline-none resize-y"
+              />
+              <div className="flex items-center justify-between text-[12px] text-muted">
+                <span>Paste header-less rows. Format follows the column sequence above.</span>
+                {rows.length > 0 && <span className="text-emerald-600 font-semibold">{rows.length} rows ready</span>}
+              </div>
+              {rejectedCount > 0 && (
+                <div className="text-[11.5px] rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-amber-800">
+                  <div className="font-semibold">{rejectedCount} row{rejectedCount !== 1 ? 's' : ''} skipped</div>
+                  {rejectedSample.map((r, i) => <div key={i} className="font-mono text-[11px]">{r}</div>)}
+                  {rejectedCount > rejectedSample.length && <div className="text-[11px]">…and {rejectedCount - rejectedSample.length} more</div>}
+                </div>
+              )}
+            </div>
+          )}
 
           {parseError && (
             <div className="text-[12px] text-red-500 rounded-md bg-red-50 border border-red-200 px-3 py-2">{parseError}</div>
@@ -478,34 +765,36 @@ function ImportCSVModal({ open, onClose, classLoads, onSuccess }: ImportCSVModal
             </Select>
           </div>
 
-          <div className="overflow-hidden rounded-md border border-line">
-            <div className="px-3 py-2 bg-surface text-[12px] font-semibold text-navy">Expected columns</div>
-            <table className="w-full text-[11.5px]">
-              <thead className="text-muted bg-surface/50">
-                <tr>
-                  <th className="px-3 py-1.5 text-left font-semibold">CSV column</th>
-                  <th className="px-3 py-1.5 text-left font-semibold">Maps to</th>
-                  <th className="px-3 py-1.5 text-left font-semibold">Example</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  ['LRN', 'lrn', '105432100023'],
-                  ['LAST_NAME', 'lastName', 'dela Cruz'],
-                  ['FIRST_NAME', 'firstName', 'Juan'],
-                  ['MI', 'middleInitial', 'R'],
-                  ['GENDER', 'gender (M/F)', 'F'],
-                  ['BIRTHDAY', 'birthday', '2012-03-19'],
-                ].map(([col, field, ex]) => (
-                  <tr key={col} className="border-t border-line">
-                    <td className="px-3 py-1.5 font-mono text-navy">{col}</td>
-                    <td className="px-3 py-1.5 text-muted">{field}</td>
-                    <td className="px-3 py-1.5 text-navy">{ex}</td>
+          {tab === 'file' && (
+            <div className="overflow-hidden rounded-md border border-line">
+              <div className="px-3 py-2 bg-surface text-[12px] font-semibold text-navy">Expected columns</div>
+              <table className="w-full text-[11.5px]">
+                <thead className="text-muted bg-surface/50">
+                  <tr>
+                    <th className="px-3 py-1.5 text-left font-semibold">CSV column</th>
+                    <th className="px-3 py-1.5 text-left font-semibold">Maps to</th>
+                    <th className="px-3 py-1.5 text-left font-semibold">Example</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {[
+                    ['LRN', 'lrn', '105432100023'],
+                    ['LAST_NAME', 'lastName', 'dela Cruz'],
+                    ['FIRST_NAME', 'firstName', 'Juan'],
+                    ['MIDDLE_NAME', 'middleName', 'Reyes'],
+                    ['GENDER', 'gender (M/F)', 'F'],
+                    ['BIRTHDAY', 'birthday', '2012-03-19'],
+                  ].map(([col, field, ex]) => (
+                    <tr key={col} className="border-t border-line">
+                      <td className="px-3 py-1.5 font-mono text-navy">{col}</td>
+                      <td className="px-3 py-1.5 text-muted">{field}</td>
+                      <td className="px-3 py-1.5 text-navy">{ex}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </Modal>
@@ -538,7 +827,7 @@ function EditStudentModal({ open, onClose, student, onSuccess }: EditStudentModa
       reset({
         lastName:             student.lastName,
         firstName:            student.firstName,
-        middleInitial:        student.middleInitial ?? '',
+        middleName:        student.middleName ?? '',
         gender:               student.gender,
         birthday:             student.birthday ?? '',
         guardianName:         student.guardian?.name ?? '',
@@ -555,7 +844,7 @@ function EditStudentModal({ open, onClose, student, onSuccess }: EditStudentModa
         payload: {
           lastName:      raw.lastName,
           firstName:     raw.firstName,
-          middleInitial: raw.middleInitial,
+          middleName: raw.middleName,
           gender:        raw.gender,
           birthday:      raw.birthday,
           guardian: {
@@ -602,8 +891,8 @@ function EditStudentModal({ open, onClose, student, onSuccess }: EditStudentModa
         <Field label="First name" required error={errors.firstName?.message}>
           <TextInput placeholder="Juan" {...register('firstName')}/>
         </Field>
-        <Field label="Middle initial">
-          <TextInput placeholder="R" maxLength={2} {...register('middleInitial')}/>
+        <Field label="Middle name">
+          <TextInput placeholder="Reyes" {...register('middleName')}/>
         </Field>
         <Field label="Gender">
           <Select {...register('gender')}>
@@ -720,7 +1009,7 @@ export function PageStudentProfile() {
     return <EmptyState icon="alert-circle" title="Student not found" description="This student does not exist or you don't have access." action={undefined}/>;
   }
 
-  const fullName = `${student.firstName}${student.middleInitial ? ` ${student.middleInitial.slice(0,1)}.` : ''} ${student.lastName}`;
+  const fullName = `${student.firstName}${student.middleName ? ` ${student.middleName.slice(0,1)}.` : ''} ${student.lastName}`;
 
   return (
     <div className="page-anim space-y-5">
@@ -735,7 +1024,7 @@ export function PageStudentProfile() {
           <Avatar name={fullName} size="xl"/>
           <div className="flex-1 min-w-0">
             <h2 className="text-[24px] font-semibold tracking-tight text-navy">
-              {student.lastName}, {student.firstName}{student.middleInitial ? ` ${student.middleInitial.slice(0,1)}.` : ''}
+              {student.lastName}, {student.firstName}{student.middleName ? ` ${student.middleName.slice(0,1)}.` : ''}
             </h2>
             <div className="text-[13px] text-muted mt-0.5">
               LRN <span className="font-mono">{student.lrn}</span> · {student.gender === 'M' ? 'Male' : 'Female'}

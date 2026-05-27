@@ -25,7 +25,7 @@ export interface CreateStudentPayload {
   lrn: string;
   lastName: string;
   firstName: string;
-  middleInitial?: string;
+  middleName?: string;
   gender: 'M' | 'F';
   birthday?: string;
   classLoadId: string;
@@ -36,7 +36,7 @@ export interface StudentImportRow {
   lrn: string;
   lastName: string;
   firstName: string;
-  middleInitial?: string;
+  middleName?: string;
   gender: 'M' | 'F';
   birthday?: string;
   guardian?: { name: string; relationship: string; contactNumber: string };

@@ -13,7 +13,7 @@ export interface MatrixRow {
     id:            string;
     lastName:      string;
     firstName:     string;
-    middleInitial: string;
+    middleName: string;
     lrn:           string;
   };
   scores: Record<string, { entryId: string | null; score: number | null }>;

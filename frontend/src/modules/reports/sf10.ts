@@ -23,7 +23,7 @@ export function generateSf10Pdf(data: ReportCard): void {
 
   // Student info
   doc.setFontSize(9);
-  doc.text(`Name: ${data.student.lastName}, ${data.student.firstName} ${data.student.middleInitial}.`, 14, 35);
+  doc.text(`Name: ${data.student.lastName}, ${data.student.firstName} ${(data.student.middleName ?? '').slice(0, 1)}.`, 14, 35);
   doc.text(`LRN: ${data.student.lrn}`, 14, 41);
   doc.text(`Grade Level: Grade ${data.student.gradeLevel}`, 14, 47);
   doc.text(`Section: ${data.student.sectionName}`, pw / 2 + 10, 47);

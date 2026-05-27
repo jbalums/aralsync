@@ -78,7 +78,7 @@ export const gradeEntryService = {
           id:            sId.toString(),
           lastName:      student.lastName,
           firstName:     student.firstName,
-          middleInitial: student.middleInitial,
+          middleName: student.middleName,
           lrn:           student.lrn,
         },
         scores,

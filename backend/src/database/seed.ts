@@ -195,7 +195,7 @@ async function seed(): Promise<void> {
 			lrn: "100000000001",
 			lastName: "Aquino",
 			firstName: "Liza",
-			middleInitial: "M",
+			middleName: "M",
 			gender: "F",
 			birthday: new Date("2012-03-14"),
 			guardian: {
@@ -208,7 +208,7 @@ async function seed(): Promise<void> {
 			lrn: "100000000002",
 			lastName: "Batungbakal",
 			firstName: "Carlo",
-			middleInitial: "D",
+			middleName: "D",
 			gender: "M",
 			birthday: new Date("2012-07-22"),
 			guardian: {
@@ -221,7 +221,7 @@ async function seed(): Promise<void> {
 			lrn: "100000000003",
 			lastName: "Cruz",
 			firstName: "Sophia",
-			middleInitial: "L",
+			middleName: "L",
 			gender: "F",
 			birthday: new Date("2012-11-03"),
 			guardian: {
@@ -234,7 +234,7 @@ async function seed(): Promise<void> {
 			lrn: "100000000004",
 			lastName: "Dela Torre",
 			firstName: "Miguel",
-			middleInitial: "A",
+			middleName: "A",
 			gender: "M",
 			birthday: new Date("2012-01-18"),
 			guardian: {
@@ -247,7 +247,7 @@ async function seed(): Promise<void> {
 			lrn: "100000000005",
 			lastName: "Espiritu",
 			firstName: "Hannah",
-			middleInitial: "R",
+			middleName: "R",
 			gender: "F",
 			birthday: new Date("2012-05-09"),
 			guardian: {
@@ -260,7 +260,7 @@ async function seed(): Promise<void> {
 			lrn: "100000000006",
 			lastName: "Fernandez",
 			firstName: "Nico",
-			middleInitial: "T",
+			middleName: "T",
 			gender: "M",
 			birthday: new Date("2012-09-27"),
 			guardian: {
@@ -273,7 +273,7 @@ async function seed(): Promise<void> {
 			lrn: "100000000007",
 			lastName: "Garcia",
 			firstName: "Alyssa",
-			middleInitial: "V",
+			middleName: "V",
 			gender: "F",
 			birthday: new Date("2012-12-15"),
 			guardian: {
@@ -286,7 +286,7 @@ async function seed(): Promise<void> {
 			lrn: "100000000008",
 			lastName: "Hernandez",
 			firstName: "Josh",
-			middleInitial: "C",
+			middleName: "C",
 			gender: "M",
 			birthday: new Date("2012-04-30"),
 			guardian: {
@@ -299,7 +299,7 @@ async function seed(): Promise<void> {
 			lrn: "100000000009",
 			lastName: "Ilagan",
 			firstName: "Trisha",
-			middleInitial: "B",
+			middleName: "B",
 			gender: "F",
 			birthday: new Date("2012-08-12"),
 			guardian: {
@@ -312,7 +312,7 @@ async function seed(): Promise<void> {
 			lrn: "100000000010",
 			lastName: "Jimenez",
 			firstName: "Marco",
-			middleInitial: "S",
+			middleName: "S",
 			gender: "M",
 			birthday: new Date("2012-02-06"),
 			guardian: {
@@ -325,7 +325,7 @@ async function seed(): Promise<void> {
 			lrn: "100000000011",
 			lastName: "Katipunan",
 			firstName: "Rina",
-			middleInitial: "P",
+			middleName: "P",
 			gender: "F",
 			birthday: new Date("2012-06-19"),
 			guardian: {
@@ -338,7 +338,7 @@ async function seed(): Promise<void> {
 			lrn: "100000000012",
 			lastName: "Lopez",
 			firstName: "Kevin",
-			middleInitial: "G",
+			middleName: "G",
 			gender: "M",
 			birthday: new Date("2012-10-24"),
 			guardian: {
@@ -355,7 +355,7 @@ async function seed(): Promise<void> {
 			lrn: "200000000001",
 			lastName: "Macapagal",
 			firstName: "Diana",
-			middleInitial: "F",
+			middleName: "F",
 			gender: "F",
 			birthday: new Date("2011-04-05"),
 			guardian: {
@@ -368,7 +368,7 @@ async function seed(): Promise<void> {
 			lrn: "200000000002",
 			lastName: "Navarro",
 			firstName: "Patrick",
-			middleInitial: "R",
+			middleName: "R",
 			gender: "M",
 			birthday: new Date("2011-08-17"),
 			guardian: {
@@ -381,7 +381,7 @@ async function seed(): Promise<void> {
 			lrn: "200000000003",
 			lastName: "Ocampo",
 			firstName: "Jade",
-			middleInitial: "N",
+			middleName: "N",
 			gender: "F",
 			birthday: new Date("2011-12-01"),
 			guardian: {
@@ -394,7 +394,7 @@ async function seed(): Promise<void> {
 			lrn: "200000000004",
 			lastName: "Padilla",
 			firstName: "Ryan",
-			middleInitial: "C",
+			middleName: "C",
 			gender: "M",
 			birthday: new Date("2011-03-23"),
 			guardian: {
@@ -407,7 +407,7 @@ async function seed(): Promise<void> {
 			lrn: "200000000005",
 			lastName: "Quizon",
 			firstName: "Sarah",
-			middleInitial: "A",
+			middleName: "A",
 			gender: "F",
 			birthday: new Date("2011-07-11"),
 			guardian: {
@@ -420,7 +420,7 @@ async function seed(): Promise<void> {
 			lrn: "200000000006",
 			lastName: "Ramos",
 			firstName: "Luis",
-			middleInitial: "E",
+			middleName: "E",
 			gender: "M",
 			birthday: new Date("2011-11-29"),
 			guardian: {
@@ -433,7 +433,7 @@ async function seed(): Promise<void> {
 			lrn: "200000000007",
 			lastName: "Santos",
 			firstName: "Kyla",
-			middleInitial: "M",
+			middleName: "M",
 			gender: "F",
 			birthday: new Date("2011-02-14"),
 			guardian: {
@@ -446,7 +446,7 @@ async function seed(): Promise<void> {
 			lrn: "200000000008",
 			lastName: "Torres",
 			firstName: "Anton",
-			middleInitial: "B",
+			middleName: "B",
 			gender: "M",
 			birthday: new Date("2011-06-08"),
 			guardian: {

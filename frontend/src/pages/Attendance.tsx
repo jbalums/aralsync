@@ -393,7 +393,7 @@ export function PageAttendance() {
                       <Avatar name={`${s.firstName} ${s.lastName}`} size="md" />
                       <div className="flex-1 min-w-0">
                         <div className="text-[14px] font-semibold text-navy leading-tight truncate">
-                          {s.lastName}, {s.firstName}{s.middleInitial ? ` ${s.middleInitial}.` : ''}
+                          {s.lastName}, {s.firstName}{s.middleName ? ` ${s.middleName.slice(0, 1)}.` : ''}
                         </div>
                         <div className="text-[11px] text-muted font-mono">
                           LRN ••• {s.lrn.slice(-4)}

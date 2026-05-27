@@ -4,7 +4,7 @@ export interface IStudentDocument extends Document {
   lrn: string;
   lastName: string;
   firstName: string;
-  middleInitial: string;
+  middleName: string;
   gender: 'M' | 'F';
   birthday: Date;
   sectionId: mongoose.Types.ObjectId;
@@ -22,7 +22,7 @@ const studentSchema = new Schema<IStudentDocument>(
     lrn: { type: String, required: true, unique: true, trim: true, length: 12 },
     lastName: { type: String, required: true, trim: true },
     firstName: { type: String, required: true, trim: true },
-    middleInitial: { type: String, default: '', trim: true },
+    middleName: { type: String, default: '', trim: true },
     gender: { type: String, enum: ['M', 'F'], required: true },
     birthday: { type: Date },
     sectionId: { type: Schema.Types.ObjectId, ref: 'Section', required: true },
