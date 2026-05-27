@@ -259,10 +259,7 @@ export function PageClassDetail() {
 			{tab === "students" && <ClassStudentsTab classId={classId} />}
 			{tab === "attendance" && <ClassAttendanceTab classId={classId} cls={cls} />}
 			{tab === "reports" && (
-				<ClassReportsTab
-					studentCount={cls.studentCount}
-					quarter={cls.quarter}
-				/>
+				<ClassReportsTab classId={classId} cls={cls} />
 			)}
 
 			{cls && (
