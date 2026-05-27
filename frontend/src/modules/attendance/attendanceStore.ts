@@ -27,13 +27,14 @@ export function canSubmitAttendance(
   classLoad: ClassLoadDetail | undefined,
 ): { allowed: boolean; reason?: string } {
   const user = useAuthStore.getState().user;
-  if (!user)      return { allowed: false, reason: 'Not authenticated' };
-  if (!classLoad) return { allowed: false, reason: 'No class load selected' };
+  if (!user) return { allowed: false, reason: 'Not authenticated' };
 
-  // advisory_teacher and above bypass the schedule gate
+  // Privileged roles bypass the schedule gate entirely
   if (['advisory_teacher', 'school_admin', 'super_admin'].includes(user.role)) {
     return { allowed: true };
   }
+
+  if (!classLoad) return { allowed: false, reason: 'No class load selected' };
 
   // subject_teacher: enforce ±15 min window around scheduled time
   const { schedule } = classLoad;
