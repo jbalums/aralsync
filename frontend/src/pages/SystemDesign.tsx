@@ -433,7 +433,7 @@ export function PageSystemDesign() {
             <Label>SubjectChip</Label>
             <div className="flex flex-wrap gap-2">
               {['Science','Mathematics','English','Filipino','MAPEH','TLE','AP'].map((name) => (
-                <SubjectChip key={name} subject={{ name }} />
+                <SubjectChip key={name} subject={name} />
               ))}
             </div>
           </div>
