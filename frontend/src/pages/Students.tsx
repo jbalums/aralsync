@@ -161,7 +161,6 @@ function mapRowByOrder(
 // ─── STUDENTS LIST ───────────────────────────────────────
 
 export function PageStudents() {
-  const navigate = useNavigate();
   const toast = useToast();
 
   const [q, setQ]                   = useState('');
@@ -169,6 +168,7 @@ export function PageStudents() {
   const [page, setPage]             = useState(1);
   const [addOpen, setAddOpen]       = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [profileId, setProfileId]   = useState<string | null>(null);
 
   const { data, isLoading } = useStudents({ q: q || undefined, classLoadId: classLoadId || undefined, page, limit: 50 });
   const students = data?.students ?? [];
@@ -224,7 +224,7 @@ export function PageStudents() {
                   <tr
                     key={s.id}
                     className="border-t border-line hover:bg-slate-50/40 cursor-pointer"
-                    onClick={() => void navigate({ to: '/app/students/$studentId', params: { studentId: s.id } })}
+                    onClick={() => setProfileId(s.id)}
                   >
                     <td className="px-3 py-2 font-mono text-muted">{(page - 1) * 50 + i + 1}</td>
                     <td className="px-3 py-2">
@@ -278,6 +278,11 @@ export function PageStudents() {
           title: 'Import complete',
           message: `Created ${r.created}, updated ${r.updated}${r.failed.length ? `, ${r.failed.length} failed` : ''}.`,
         })}
+      />
+      <StudentProfileModal
+        studentId={profileId ?? ''}
+        open={Boolean(profileId)}
+        onClose={() => setProfileId(null)}
       />
     </div>
   );
@@ -988,17 +993,23 @@ function DeleteStudentModal({ open, onClose, student, onSuccess }: DeleteStudent
 
 // ─── STUDENT PROFILE ─────────────────────────────────────
 
-export function PageStudentProfile() {
-  const navigate = useNavigate();
+function StudentProfileContent({
+  studentId,
+  onNavigateBack,
+  onClose,
+}: {
+  studentId: string;
+  onNavigateBack?: () => void;
+  onClose?: () => void;
+}) {
   const toast = useToast();
-  const { studentId } = useParams({ strict: false }) as { studentId: string };
   const [tab, setTab] = useState('overview');
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   // Attendance tab state
-  const [attPage, setAttPage]     = useState(1);
-  const [attStatus, setAttStatus] = useState<AttendanceStatus | ''>('');
+  const [attPage, setAttPage]       = useState(1);
+  const [attStatus, setAttStatus]   = useState<AttendanceStatus | ''>('');
   const [attSession, setAttSession] = useState<Session | ''>('');
 
   // Grades tab state
@@ -1007,7 +1018,6 @@ export function PageStudentProfile() {
   const { data: student, isLoading } = useStudent(studentId);
   const { data: summary } = useStudentAttendanceSummary(studentId);
 
-  // Attendance records (for Attendance tab)
   const { data: attRecordsData, isLoading: attLoading } = useStudentAttendanceRecords(studentId, {
     page:    attPage,
     limit:   20,
@@ -1015,11 +1025,9 @@ export function PageStudentProfile() {
     session: attSession || undefined,
   });
 
-  // Class loads → filter to student's section (for Grades tab + Overview info)
   const { data: allClassLoads } = useClassLoads();
   const studentClassLoads = allClassLoads?.filter((cl) => cl.sectionId === student?.sectionId) ?? [];
 
-  // Parallel quarterly grade queries per class load (for Grades tab)
   const gradeQueries = useQueries({
     queries: studentClassLoads.map((cl) => ({
       queryKey: GRADE_KEYS.quarterly(cl.id, activeQuarter),
@@ -1027,6 +1035,8 @@ export function PageStudentProfile() {
       enabled:  Boolean(cl.id),
     })),
   });
+
+  const dismiss = onClose ?? onNavigateBack;
 
   if (isLoading) {
     return (
@@ -1046,14 +1056,16 @@ export function PageStudentProfile() {
   const fullName = `${student.firstName}${student.middleName ? ` ${student.middleName.slice(0,1)}.` : ''} ${student.lastName}`;
 
   return (
-    <div className="page-anim space-y-5">
+    <div className="space-y-5">
       <Card className="p-5 sm:p-6">
-        <button
-          onClick={() => void navigate({ to: '/app/students' })}
-          className="text-[12px] text-muted hover:text-navy inline-flex items-center gap-1 mb-3"
-        >
-          <Icon name="arrow-left" size={12}/> Back to Students
-        </button>
+        {onNavigateBack && (
+          <button
+            onClick={onNavigateBack}
+            className="text-[12px] text-muted hover:text-navy inline-flex items-center gap-1 mb-3"
+          >
+            <Icon name="arrow-left" size={12}/> Back to Students
+          </button>
+        )}
         <div className="flex items-start gap-5 flex-wrap">
           <Avatar name={fullName} size="xl"/>
           <div className="flex-1 min-w-0">
@@ -1401,8 +1413,37 @@ export function PageStudentProfile() {
         student={student}
         onSuccess={() => {
           toast?.push({ type: 'success', title: 'Student deleted' });
-          void navigate({ to: '/app/students' });
+          dismiss?.();
         }}
+      />
+    </div>
+  );
+}
+
+function StudentProfileModal({
+  studentId,
+  open,
+  onClose,
+}: {
+  studentId: string;
+  open: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Modal open={open} onClose={onClose} title="" width="max-w-4xl">
+      <StudentProfileContent studentId={studentId} onClose={onClose}/>
+    </Modal>
+  );
+}
+
+export function PageStudentProfile() {
+  const navigate = useNavigate();
+  const { studentId } = useParams({ strict: false }) as { studentId: string };
+  return (
+    <div className="page-anim">
+      <StudentProfileContent
+        studentId={studentId}
+        onNavigateBack={() => void navigate({ to: '/app/students' })}
       />
     </div>
   );
