@@ -21,7 +21,7 @@ import {
 	ClassSettingsModal,
 	ClassOverviewTab,
 	ClassStudentsTab,
-	ClassAttendancePlaceholder,
+	ClassAttendanceTab,
 	ClassReportsTab,
 	subjectHue,
 } from "../components/classes";
@@ -257,7 +257,7 @@ export function PageClassDetail() {
 
 			{tab === "overview" && <ClassOverviewTab cls={cls} />}
 			{tab === "students" && <ClassStudentsTab classId={classId} />}
-			{tab === "attendance" && <ClassAttendancePlaceholder />}
+			{tab === "attendance" && <ClassAttendanceTab classId={classId} cls={cls} />}
 			{tab === "reports" && (
 				<ClassReportsTab
 					studentCount={cls.studentCount}

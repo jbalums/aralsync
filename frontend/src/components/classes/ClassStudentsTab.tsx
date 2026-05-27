@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Avatar, Card, Icon, Skeleton } from "..";

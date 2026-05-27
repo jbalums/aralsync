@@ -7,6 +7,6 @@ export { ClassSettingsModal } from "./ClassSettingsModal";
 export { ClassSlotsEditor } from "./ClassSlotsEditor";
 export { ClassOverviewTab } from "./ClassOverviewTab";
 export { ClassStudentsTab } from "./ClassStudentsTab";
-export { ClassAttendancePlaceholder } from "./ClassAttendancePlaceholder";
+export { ClassAttendanceTab } from "./ClassAttendanceTab";
 export { ClassReportsTab } from "./ClassReportsTab";
 export { subjectHue } from "./subjectColors";

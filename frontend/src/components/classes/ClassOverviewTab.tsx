@@ -1,11 +1,38 @@
+import { useMemo } from "react";
 import { StatCard, Card, SectionHeader, Icon, Progress } from "..";
 import type { ClassLoadListItem } from "../../shared/types";
+import { useAttendanceSummary } from "../../modules/attendance/useAttendance";
+import { useQuarterlyGrades } from "../../modules/gradebook/useGradebook";
+import { useSyncStore } from "../../modules/sync/syncStore";
 
 interface ClassOverviewTabProps {
 	cls: ClassLoadListItem;
 }
 
 export function ClassOverviewTab({ cls }: ClassOverviewTabProps) {
+	const { data: summaryRows = [] } = useAttendanceSummary(cls.id);
+	const { data: quarterlyGrades = [] } = useQuarterlyGrades(cls.id, cls.quarter);
+	const queueCount = useSyncStore((s) => s.queueCount);
+
+	const avgRate = useMemo(
+		() =>
+			summaryRows.length > 0
+				? Math.round(summaryRows.reduce((a, r) => a + r.rate, 0) / summaryRows.length)
+				: null,
+		[summaryRows],
+	);
+
+	const avgGrade = useMemo(
+		() =>
+			quarterlyGrades.length > 0
+				? (
+						quarterlyGrades.reduce((a, r) => a + r.transmutedGrade, 0) /
+						quarterlyGrades.length
+					).toFixed(1)
+				: null,
+		[quarterlyGrades],
+	);
+
 	return (
 		<div className="space-y-5">
 			<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -19,23 +46,27 @@ export function ClassOverviewTab({ cls }: ClassOverviewTabProps) {
 				<StatCard
 					icon="check-circle"
 					label="Avg attendance"
-					value="-"
+					value={avgRate !== null ? `${avgRate}%` : "-"}
 					color="accent"
-					sub="Not yet computed"
+					sub={
+						summaryRows.length > 0
+							? `${summaryRows.length} students tracked`
+							: "Not yet taken"
+					}
 				/>
 				<StatCard
 					icon="graduation-cap"
 					label="Avg grade"
-					value="-"
+					value={avgGrade ?? "-"}
 					color="blue"
-					sub={`${cls.quarter} cumulative`}
+					sub={avgGrade ? `${cls.quarter} transmuted` : "No grades yet"}
 				/>
 				<StatCard
 					icon="cloud-off"
 					label="Pending sync"
-					value={0}
+					value={queueCount}
 					color="amber"
-					sub="Up to date"
+					sub={queueCount === 0 ? "Up to date" : "Queued for sync"}
 				/>
 			</div>
 
