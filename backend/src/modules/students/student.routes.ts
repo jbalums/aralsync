@@ -25,5 +25,6 @@ router.put('/:id',                                 validateParams(studentIdParam
 router.delete('/:id',                              validateParams(studentIdParamSchema),   studentController.remove);
 router.post('/:id/transfer',                       validateParams(studentIdParamSchema),   validateBody(transferStudentSchema), studentController.transfer);
 router.get('/:id/attendance-summary',              validateParams(studentIdParamSchema),   studentController.getAttendanceSummary);
+router.get('/:id/attendance-records',              validateParams(studentIdParamSchema),   studentController.getAttendanceRecords);
 
 export { router as studentRouter };

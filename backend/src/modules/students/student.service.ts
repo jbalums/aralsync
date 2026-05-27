@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { Student }           from '../../database/models/Student.model';
 import { ClassLoad }         from '../../database/models/ClassLoad.model';
 import { AttendanceRecord }  from '../../database/models/AttendanceRecord.model';
+import { Subject }           from '../../database/models/Subject.model';
 import { User }              from '../../database/models/User.model';
 import { validateLRN }       from '../../shared/utils/lrn';
 
@@ -246,6 +247,69 @@ export const studentService = {
     }
 
     return { created, updated, failed };
+  },
+
+  async getAttendanceRecords(studentId: string, teacherId: string, params: {
+    page: number;
+    limit: number;
+    startDate?: string;
+    endDate?: string;
+    session?: string;
+    status?: string;
+  }) {
+    const loads = await ClassLoad.find({ teacherId, isActive: true }).lean();
+    const sectionIds = loads.map((l) => l.sectionId);
+
+    const student = await Student.findOne({ _id: studentId, sectionId: { $in: sectionIds }, isActive: true }).lean();
+    if (!student) return null;
+
+    const classLoadIds = loads.map((l) => l._id);
+
+    const subjectIds = [...new Set(loads.map((l) => l.subjectId.toString()))];
+    const subjects = await Subject.find({ _id: { $in: subjectIds } }, 'name').lean();
+    const subjectMap = new Map(subjects.map((s) => [(s._id as mongoose.Types.ObjectId).toString(), s.name as string]));
+    const loadMap = new Map(loads.map((l) => [l._id.toString(), l]));
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const query: Record<string, any> = {
+      studentId:   new mongoose.Types.ObjectId(studentId),
+      classLoadId: { $in: classLoadIds },
+    };
+    if (params.startDate || params.endDate) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const df: Record<string, any> = {};
+      if (params.startDate) df.$gte = new Date(params.startDate);
+      if (params.endDate)   df.$lte = new Date(params.endDate);
+      query.date = df;
+    }
+    if (params.session) query.session = params.session;
+    if (params.status)  query.status  = params.status;
+
+    const skip = (params.page - 1) * params.limit;
+    const [records, total] = await Promise.all([
+      AttendanceRecord.find(query).sort({ date: -1, session: 1 }).skip(skip).limit(params.limit).lean(),
+      AttendanceRecord.countDocuments(query),
+    ]);
+
+    return {
+      records: records.map((r) => {
+        const clIdStr = (r.classLoadId as mongoose.Types.ObjectId).toString();
+        const load    = loadMap.get(clIdStr);
+        return {
+          id:          (r._id as mongoose.Types.ObjectId).toString(),
+          classLoadId: clIdStr,
+          studentId:   (r.studentId as mongoose.Types.ObjectId).toString(),
+          date:        (r.date as Date).toISOString().slice(0, 10),
+          session:     r.session,
+          status:      r.status,
+          subjectName: subjectMap.get(load?.subjectId.toString() ?? '') ?? '',
+          quarter:     load?.quarter ?? '',
+          syncStatus:  r.syncStatus,
+          updatedAt:   (r.updatedAt as Date).toISOString(),
+        };
+      }),
+      meta: { total, page: params.page, pages: Math.ceil(total / params.limit) },
+    };
   },
 
   async getAttendanceSummary(studentId: string, teacherId: string) {

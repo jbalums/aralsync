@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { useQueries } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { useForm, type FieldValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,16 +15,20 @@ import {
   useStudent,
   useStudentByLRN,
   useStudentAttendanceSummary,
+  useStudentAttendanceRecords,
   useCreateStudent,
   useImportStudents,
   useUpdateStudent,
   useDeleteStudent,
 } from '../modules/students/useStudents';
+import { quarterlyGradesService } from '../modules/gradebook/quarterlyGrades.service';
+import { GRADE_KEYS } from '../modules/gradebook/useGradebook';
+import { PASSING_GRADE } from '../shared/constants/grading';
 import { useClassLoads } from '../modules/classrooms/useClassLoads';
 import { useAuthStore } from '../modules/auth/authStore';
 import { validateLRN } from '../shared/utils/lrn';
 import type { ImportResult, StudentImportRow } from '../modules/students/students.service';
-import type { ClassLoadListItem, Student } from '../shared/types';
+import type { AttendanceStatus, ClassLoadListItem, Quarter, Session, Student } from '../shared/types';
 
 // ─── Schemas ─────────────────────────────────────────────
 const addSchema = z.object({
@@ -991,8 +996,37 @@ export function PageStudentProfile() {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
+  // Attendance tab state
+  const [attPage, setAttPage]     = useState(1);
+  const [attStatus, setAttStatus] = useState<AttendanceStatus | ''>('');
+  const [attSession, setAttSession] = useState<Session | ''>('');
+
+  // Grades tab state
+  const [activeQuarter, setActiveQuarter] = useState<Quarter>('Q1');
+
   const { data: student, isLoading } = useStudent(studentId);
   const { data: summary } = useStudentAttendanceSummary(studentId);
+
+  // Attendance records (for Attendance tab)
+  const { data: attRecordsData, isLoading: attLoading } = useStudentAttendanceRecords(studentId, {
+    page:    attPage,
+    limit:   20,
+    status:  attStatus  || undefined,
+    session: attSession || undefined,
+  });
+
+  // Class loads → filter to student's section (for Grades tab + Overview info)
+  const { data: allClassLoads } = useClassLoads();
+  const studentClassLoads = allClassLoads?.filter((cl) => cl.sectionId === student?.sectionId) ?? [];
+
+  // Parallel quarterly grade queries per class load (for Grades tab)
+  const gradeQueries = useQueries({
+    queries: studentClassLoads.map((cl) => ({
+      queryKey: GRADE_KEYS.quarterly(cl.id, activeQuarter),
+      queryFn:  () => quarterlyGradesService.get(cl.id, activeQuarter),
+      enabled:  Boolean(cl.id),
+    })),
+  });
 
   if (isLoading) {
     return (
@@ -1074,6 +1108,40 @@ export function PageStudentProfile() {
             </div>
           )}
 
+          {studentClassLoads.length > 0 && (
+            <Card className="p-5">
+              <SectionHeader title="Student Info"/>
+              <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-3 text-[13px]">
+                <div>
+                  <dt className="text-muted">LRN</dt>
+                  <dd className="font-mono font-medium text-navy mt-0.5">{student.lrn}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted">Gender</dt>
+                  <dd className="font-medium text-navy mt-0.5">{student.gender === 'M' ? 'Male' : 'Female'}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted">Section</dt>
+                  <dd className="font-medium text-navy mt-0.5">{studentClassLoads[0].section.name}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted">Grade Level</dt>
+                  <dd className="font-medium text-navy mt-0.5">Grade {studentClassLoads[0].section.gradeLevel}</dd>
+                </div>
+                {student.birthday && (
+                  <div>
+                    <dt className="text-muted">Birthday</dt>
+                    <dd className="font-medium text-navy mt-0.5">{student.birthday}</dd>
+                  </div>
+                )}
+                <div>
+                  <dt className="text-muted">Subjects</dt>
+                  <dd className="font-medium text-navy mt-0.5">{studentClassLoads.length}</dd>
+                </div>
+              </dl>
+            </Card>
+          )}
+
           {student.guardian?.name && (
             <Card className="p-5">
               <SectionHeader title="Guardian"/>
@@ -1097,23 +1165,228 @@ export function PageStudentProfile() {
       )}
 
       {tab === 'attendance' && (
-        <Card className="p-8 text-center">
-          <Icon name="clipboard-check" size={32} className="text-muted mx-auto mb-3"/>
-          <p className="text-[14px] font-semibold text-navy">Detailed attendance coming in Phase 5</p>
-          {summary && (
-            <p className="text-[13px] text-muted mt-1">
-              Overall: {summary.present} present · {summary.late} late · {summary.absent} absent · {summary.excused} excused
-            </p>
-          )}
-        </Card>
+        <div className="space-y-4">
+          <Card className="p-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <select
+                value={attStatus}
+                onChange={(e) => { setAttStatus(e.target.value as AttendanceStatus | ''); setAttPage(1); }}
+                className="text-[13px] border border-border rounded-lg px-3 py-1.5 bg-background text-navy focus:outline-none focus:ring-2 focus:ring-primary/30"
+              >
+                <option value="">All statuses</option>
+                <option value="present">Present</option>
+                <option value="late">Late</option>
+                <option value="absent">Absent</option>
+                <option value="excused">Excused</option>
+              </select>
+              <select
+                value={attSession}
+                onChange={(e) => { setAttSession(e.target.value as Session | ''); setAttPage(1); }}
+                className="text-[13px] border border-border rounded-lg px-3 py-1.5 bg-background text-navy focus:outline-none focus:ring-2 focus:ring-primary/30"
+              >
+                <option value="">All sessions</option>
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
+              {attRecordsData && (
+                <span className="ml-auto text-[12px] text-muted">
+                  {attRecordsData.meta.total} record{attRecordsData.meta.total !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+          </Card>
+
+          <Card className="overflow-hidden">
+            {attLoading ? (
+              <div className="p-4 space-y-2">
+                {[1,2,3,4,5].map((i) => <Skeleton key={i} className="h-10"/>)}
+              </div>
+            ) : !attRecordsData || attRecordsData.records.length === 0 ? (
+              <div className="p-10 text-center">
+                <Icon name="clipboard-check" size={28} className="text-muted mx-auto mb-2"/>
+                <p className="text-[13px] text-muted">No attendance records found.</p>
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[13px]">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/5">
+                        <th className="text-left px-4 py-2.5 font-medium text-muted">Date</th>
+                        <th className="text-left px-4 py-2.5 font-medium text-muted">Day</th>
+                        <th className="text-left px-4 py-2.5 font-medium text-muted">Session</th>
+                        <th className="text-left px-4 py-2.5 font-medium text-muted">Subject</th>
+                        <th className="text-left px-4 py-2.5 font-medium text-muted">Quarter</th>
+                        <th className="text-left px-4 py-2.5 font-medium text-muted">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {attRecordsData.records.map((rec) => {
+                        const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+                        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                        const [y, m, d] = rec.date.split('-').map(Number);
+                        const dateObj = new Date(y, m - 1, d);
+                        const dateLabel = `${months[m - 1]} ${d}, ${y}`;
+                        const dayLabel  = days[dateObj.getDay()];
+                        const statusColors: Record<string, string> = {
+                          present: 'bg-emerald-50 text-emerald-700',
+                          late:    'bg-amber-50 text-amber-700',
+                          absent:  'bg-rose-50 text-rose-700',
+                          excused: 'bg-slate-100 text-slate-600',
+                        };
+                        return (
+                          <tr key={rec.id} className="border-b border-border/50 hover:bg-muted/5 transition-colors">
+                            <td className="px-4 py-2.5 text-navy font-medium">{dateLabel}</td>
+                            <td className="px-4 py-2.5 text-muted">{dayLabel}</td>
+                            <td className="px-4 py-2.5">
+                              <span className={`pill text-[11px] ${rec.session === 'AM' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'}`}>
+                                {rec.session}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2.5 text-navy">{rec.subjectName || <span className="text-muted">—</span>}</td>
+                            <td className="px-4 py-2.5 text-muted">{rec.quarter}</td>
+                            <td className="px-4 py-2.5">
+                              <span className={`pill text-[11px] capitalize ${statusColors[rec.status] ?? 'bg-slate-100 text-slate-600'}`}>
+                                {rec.status}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {attRecordsData.meta.pages > 1 && (
+                  <div className="flex items-center justify-between px-4 py-3 border-t border-border text-[12px] text-muted">
+                    <Btn
+                      variant="secondary" size="sm"
+                      onClick={() => setAttPage((p) => Math.max(1, p - 1))}
+                      disabled={attPage <= 1}
+                    >
+                      ← Prev
+                    </Btn>
+                    <span>Page {attRecordsData.meta.page} of {attRecordsData.meta.pages}</span>
+                    <Btn
+                      variant="secondary" size="sm"
+                      onClick={() => setAttPage((p) => Math.min(attRecordsData.meta.pages, p + 1))}
+                      disabled={attPage >= attRecordsData.meta.pages}
+                    >
+                      Next →
+                    </Btn>
+                  </div>
+                )}
+              </>
+            )}
+          </Card>
+        </div>
       )}
 
       {tab === 'grades' && (
-        <Card className="p-8 text-center">
-          <Icon name="graduation-cap" size={32} className="text-muted mx-auto mb-3"/>
-          <p className="text-[14px] font-semibold text-navy">Grades coming in Phase 6</p>
-          <p className="text-[13px] text-muted mt-1">Gradebook must be wired first.</p>
-        </Card>
+        <div className="space-y-4">
+          <div className="flex gap-2 flex-wrap">
+            {(['Q1','Q2','Q3','Q4'] as Quarter[]).map((q) => (
+              <button
+                key={q}
+                onClick={() => setActiveQuarter(q)}
+                className={`px-4 py-1.5 rounded-lg text-[13px] font-medium transition-colors ${
+                  activeQuarter === q
+                    ? 'bg-primary text-white'
+                    : 'bg-muted/10 text-muted hover:bg-muted/20'
+                }`}
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+
+          <Card className="overflow-hidden">
+            {gradeQueries.some((q) => q.isLoading) ? (
+              <div className="p-4 space-y-2">
+                {[1,2,3].map((i) => <Skeleton key={i} className="h-10"/>)}
+              </div>
+            ) : studentClassLoads.length === 0 ? (
+              <div className="p-10 text-center">
+                <Icon name="graduation-cap" size={28} className="text-muted mx-auto mb-2"/>
+                <p className="text-[13px] text-muted">No class loads found for this student.</p>
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[13px]">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/5">
+                        <th className="text-left px-4 py-2.5 font-medium text-muted">Subject</th>
+                        <th className="text-right px-4 py-2.5 font-medium text-muted">WW</th>
+                        <th className="text-right px-4 py-2.5 font-medium text-muted">PT</th>
+                        <th className="text-right px-4 py-2.5 font-medium text-muted">QA</th>
+                        <th className="text-right px-4 py-2.5 font-medium text-muted">Initial</th>
+                        <th className="text-right px-4 py-2.5 font-medium text-muted">Final Grade</th>
+                        <th className="text-center px-4 py-2.5 font-medium text-muted">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {studentClassLoads.map((cl, i) => {
+                        const gradeRow = gradeQueries[i]?.data?.find((r) => r.studentId === student.id);
+                        const hasGrade = Boolean(gradeRow);
+                        const passing  = hasGrade && gradeRow!.transmutedGrade >= PASSING_GRADE;
+                        return (
+                          <tr key={cl.id} className="border-b border-border/50 hover:bg-muted/5 transition-colors">
+                            <td className="px-4 py-2.5 text-navy font-medium">{cl.subject.name}</td>
+                            <td className="px-4 py-2.5 text-right text-muted">
+                              {hasGrade ? `${gradeRow!.wwWeighted.toFixed(1)}%` : '—'}
+                            </td>
+                            <td className="px-4 py-2.5 text-right text-muted">
+                              {hasGrade ? `${gradeRow!.ptWeighted.toFixed(1)}%` : '—'}
+                            </td>
+                            <td className="px-4 py-2.5 text-right text-muted">
+                              {hasGrade ? `${gradeRow!.qaWeighted.toFixed(1)}%` : '—'}
+                            </td>
+                            <td className="px-4 py-2.5 text-right text-muted">
+                              {hasGrade ? gradeRow!.initialGrade.toFixed(1) : '—'}
+                            </td>
+                            <td className="px-4 py-2.5 text-right font-semibold text-navy">
+                              {hasGrade ? gradeRow!.transmutedGrade : '—'}
+                            </td>
+                            <td className="px-4 py-2.5 text-center">
+                              {hasGrade ? (
+                                <span className={`pill text-[11px] ${passing ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                                  {passing ? 'Pass' : 'Fail'}
+                                </span>
+                              ) : (
+                                <span className="pill text-[11px] bg-slate-100 text-slate-500">Pending</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    {(() => {
+                      const graded = studentClassLoads
+                        .map((cl, i) => gradeQueries[i]?.data?.find((r) => r.studentId === student.id))
+                        .filter(Boolean);
+                      if (graded.length === 0) return null;
+                      const avg = graded.reduce((sum, r) => sum + r!.transmutedGrade, 0) / graded.length;
+                      return (
+                        <tfoot>
+                          <tr className="bg-muted/5 border-t border-border font-semibold">
+                            <td className="px-4 py-2.5 text-navy" colSpan={5}>Average ({graded.length} subject{graded.length !== 1 ? 's' : ''})</td>
+                            <td className="px-4 py-2.5 text-right text-navy">{avg.toFixed(1)}</td>
+                            <td className="px-4 py-2.5 text-center">
+                              <span className={`pill text-[11px] ${avg >= PASSING_GRADE ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                                {avg >= PASSING_GRADE ? 'Pass' : 'Fail'}
+                              </span>
+                            </td>
+                          </tr>
+                        </tfoot>
+                      );
+                    })()}
+                  </table>
+                </div>
+              </>
+            )}
+          </Card>
+        </div>
       )}
 
       <EditStudentModal

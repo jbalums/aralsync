@@ -143,4 +143,28 @@ export const studentController = {
       next(err);
     }
   },
+
+  async getAttendanceRecords(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await studentService.getAttendanceRecords(
+        req.params.id as string,
+        req.user!.userId,
+        {
+          page:      Number(req.query.page  ?? 1),
+          limit:     Number(req.query.limit ?? 20),
+          startDate: req.query.startDate as string | undefined,
+          endDate:   req.query.endDate   as string | undefined,
+          session:   req.query.session   as string | undefined,
+          status:    req.query.status    as string | undefined,
+        },
+      );
+      if (!result) {
+        error(res, 'Student not found', 404);
+        return;
+      }
+      success(res, result.records, 200, result.meta);
+    } catch (err) {
+      next(err);
+    }
+  },
 };

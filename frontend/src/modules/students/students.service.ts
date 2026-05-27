@@ -1,5 +1,5 @@
 import { http } from '../../services/http';
-import type { Student } from '../../shared/types';
+import type { AttendanceStatus, Quarter, Session, Student } from '../../shared/types';
 
 export interface StudentListItem extends Student {
   // All Student fields + optional section label
@@ -46,6 +46,24 @@ export interface ImportResult {
   created: number;
   updated: number;
   failed: { lrn: string; reason: string }[];
+}
+
+export interface AttendanceRecordItem {
+  id: string;
+  classLoadId: string;
+  studentId: string;
+  date: string;
+  session: Session;
+  status: AttendanceStatus;
+  subjectName: string;
+  quarter: Quarter;
+  syncStatus: string;
+  updatedAt: string;
+}
+
+export interface AttendanceRecordsResult {
+  records: AttendanceRecordItem[];
+  meta: { total: number; page: number; pages: number };
 }
 
 export const studentsService = {
@@ -110,5 +128,20 @@ export const studentsService = {
 
   async delete(id: string): Promise<void> {
     await http.delete(`/students/${id}`);
+  },
+
+  async getAttendanceRecords(id: string, params: {
+    page?: number;
+    limit?: number;
+    startDate?: string;
+    endDate?: string;
+    session?: Session;
+    status?: AttendanceStatus;
+  }): Promise<AttendanceRecordsResult> {
+    const res = await http.get<{ data: AttendanceRecordItem[]; meta: { total: number; page: number; pages: number } }>(
+      `/students/${id}/attendance-records`,
+      { params },
+    );
+    return { records: res.data.data, meta: res.data.meta };
   },
 };

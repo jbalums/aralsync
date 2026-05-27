@@ -4,7 +4,7 @@ import {
   type CreateStudentPayload,
   type StudentImportRow,
 } from './students.service';
-import type { Student } from '../../shared/types';
+import type { AttendanceStatus, Session, Student } from '../../shared/types';
 
 export const STUDENT_KEYS = {
   all:     ['students'] as const,
@@ -12,6 +12,7 @@ export const STUDENT_KEYS = {
   detail:  (id: string) => ['students', id] as const,
   byLRN:   (lrn: string) => ['students', 'lrn', lrn] as const,
   summary: (id: string) => ['students', id, 'attendance-summary'] as const,
+  records: (id: string, params: object) => ['students', id, 'attendance-records', params] as const,
 };
 
 export function useStudents(params: {
@@ -91,6 +92,25 @@ export function useImportStudents() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: STUDENT_KEYS.all });
     },
+  });
+}
+
+export function useStudentAttendanceRecords(id: string, params: {
+  page?: number;
+  limit?: number;
+  status?: AttendanceStatus | '';
+  session?: Session | '';
+}) {
+  const cleanParams = {
+    page:    params.page   ?? 1,
+    limit:   params.limit  ?? 20,
+    ...(params.status  ? { status:  params.status  } : {}),
+    ...(params.session ? { session: params.session } : {}),
+  };
+  return useQuery({
+    queryKey: STUDENT_KEYS.records(id, cleanParams),
+    queryFn:  () => studentsService.getAttendanceRecords(id, cleanParams),
+    enabled:  Boolean(id),
   });
 }
 
