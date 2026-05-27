@@ -269,7 +269,7 @@ export function Modal({
 						<Icon name="x" size={18} />
 					</button>
 				</div>
-				<div className="px-5 py-4 max-h-[70vh] overflow-y-auto">
+				<div className="px-5 py-4 max-h-[85vh] overflow-y-auto">
 					{children}
 				</div>
 				{footer && (
