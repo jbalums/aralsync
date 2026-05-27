@@ -4,6 +4,7 @@ import { RouterProvider } from '@tanstack/react-router';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { router } from './app/router';
 import { queryClient } from './app/queryClient';
+import { ToastProvider } from './components';
 import { configureHttp } from './services/http';
 import { useAuthStore } from './modules/auth/authStore';
 import { authService } from './modules/auth/auth.service';
@@ -36,8 +37,12 @@ function AppRoot() {
           const user = await authService.me();
           await setAuth(user, tokens.accessToken, tokens.refreshToken);
         }
-      } catch {
-        await clearAuth();
+      } catch (err) {
+        const status = (err as { response?: { status?: number } })?.response?.status;
+        if (status === 401 || status === 403) {
+          await clearAuth();
+        }
+        // Network/server errors: leave stored token intact; retry on next reload
       } finally {
         setHydrated();
       }
@@ -81,7 +86,9 @@ function AppRoot() {
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <AppRoot />
+      <ToastProvider>
+        <AppRoot />
+      </ToastProvider>
     </QueryClientProvider>
   </React.StrictMode>,
 );

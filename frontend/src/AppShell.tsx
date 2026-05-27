@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 
 import { ToastProvider } from './components';
@@ -6,6 +6,7 @@ import { Sidebar, TopBar, MobileTabBar, MoreSheet } from './layout';
 import { AppContext } from './app/AppContext';
 import { useSyncStore } from './modules/sync/syncStore';
 import { useInstallPrompt } from './hooks/useInstallPrompt';
+import { useAuthStore } from './modules/auth/authStore';
 
 export default function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -14,11 +15,28 @@ export default function AppShell() {
 
   const online = useSyncStore(s => s.isOnline);
   const { canInstall, install } = useInstallPrompt();
+  const isHydrated = useAuthStore(s => s.isHydrated);
+  const accessToken = useAuthStore(s => s.accessToken);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isHydrated && !accessToken) {
+      void navigate({ to: '/login', replace: true });
+    }
+  }, [isHydrated, accessToken, navigate]);
+
   const routerState = useRouterState();
   const pathname = routerState.location.pathname;
   const activeSegment = pathname.replace('/app/', '').split('/')[0] ?? 'dashboard';
+
+  if (!isHydrated) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-surface text-muted text-sm">
+        Loading…
+      </div>
+    );
+  }
 
   function handleNavigate(segment: string) {
     setSidebarOpen(false);

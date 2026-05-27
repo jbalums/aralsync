@@ -492,8 +492,10 @@ export function TopBar({
 						{
 							label: "Sign out",
 							icon: "log-out",
-							onClick: () => {
-								window.location.href = "/signin";
+							onClick: async () => {
+								const { clearAuth } = useAuthStore.getState();
+								await clearAuth();
+								window.location.href = "/login";
 							},
 						},
 					]}
