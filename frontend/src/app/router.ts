@@ -25,6 +25,7 @@ const PageOwner          = lazy(() => import('../pages/OwnerDashboard').then(m =
 const PageOwnerSchool    = lazy(() => import('../pages/OwnerSchool').then(m => ({ default: m.PageOwnerSchool }))) as unknown as RouteComponent;
 const PageSync           = lazy(() => import('../pages/Sync').then(m => ({ default: m.PageSync }))) as unknown as RouteComponent;
 const PageSettings       = lazy(() => import('../pages/Settings').then(m => ({ default: m.PageSettings })));
+const PageSystemDesign   = lazy(() => import('../pages/SystemDesign').then(m => ({ default: m.PageSystemDesign }))) as unknown as RouteComponent;
 
 // ─── Root ─────────────────────────────────────────────────
 export const rootRoute = createRootRoute();
@@ -188,6 +189,12 @@ export const settingsRoute = createRoute({
   component: PageSettings,
 });
 
+export const systemDesignRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/system-design',
+  component: PageSystemDesign,
+});
+
 // ─── Route tree ───────────────────────────────────────────
 const routeTree = rootRoute.addChildren([
   landingRoute,
@@ -213,6 +220,7 @@ const routeTree = rootRoute.addChildren([
     ownerSchoolRoute,
     syncRoute,
     settingsRoute,
+    systemDesignRoute,
   ]),
 ]);
 

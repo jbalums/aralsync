@@ -310,37 +310,36 @@ export function ToastProvider({ children }) {
 					const tone =
 						{
 							success: {
-								bg: "#ECFDF5",
-								border: "#A7F3D0",
-								fg: "#065F46",
+								bg: "#059669",
+								border: "#047857",
+								fg: "#ffffff",
 								icon: "check-circle",
 							},
 							error: {
-								bg: "#FEF2F2",
-								border: "#FECACA",
-								fg: "#7F1D1D",
+								bg: "#DC2626",
+								border: "#B91C1C",
+								fg: "#ffffff",
 								icon: "x-circle",
 							},
 							warning: {
-								bg: "#FFFBEB",
-								border: "#FDE68A",
-								fg: "#78350F",
+								bg: "#D97706",
+								border: "#B45309",
+								fg: "#ffffff",
 								icon: "alert-triangle",
 							},
 							info: {
-								bg: "#F0F9FF",
-								border: "#BAE6FD",
-								fg: "#075985",
+								bg: "#2563EB",
+								border: "#1D4ED8",
+								fg: "#ffffff",
 								icon: "info",
 							},
 						}[t.type] || {};
 					return (
 						<div
 							key={t.id}
-							className="toast-anim rounded-lg shadow-lg border px-3.5 py-3 flex items-start gap-3 bg-white"
+							className="toast-anim rounded-lg shadow-2xl border-0 px-3.5 py-3 flex items-start gap-3"
 							style={{
 								background: tone.bg,
-								borderColor: tone.border,
 								color: tone.fg,
 							}}
 						>
@@ -354,7 +353,7 @@ export function ToastProvider({ children }) {
 								<div className="text-[13px]">{t.message}</div>
 							</div>
 							<button
-								className="opacity-60 hover:opacity-100"
+								className="opacity-70 hover:opacity-100"
 								onClick={() => remove(t.id)}
 								aria-label="Dismiss"
 							>
