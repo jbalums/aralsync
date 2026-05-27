@@ -35,9 +35,10 @@ export function PageAttendance() {
   const [selectedClassLoadId, setSelectedClassLoadId] = useState('');
   const [marks,    setMarks]    = useState({});
   const [focusIdx, setFocusIdx] = useState(0);
-  const [saved,    setSaved]    = useState(false);
-  const [summaryOpen, setSummaryOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [saved,        setSaved]        = useState(false);
+  const [summaryOpen,  setSummaryOpen]  = useState(false);
+  const [saving,       setSaving]       = useState(false);
+  const [overrideOpen, setOverrideOpen] = useState(false);
 
   // ─── Queries ──────────────────────────────────────────────
   const { data: classLoads = [], isLoading: classLoadsLoading } = useClassLoads();
@@ -151,11 +152,7 @@ export function PageAttendance() {
   const submitGate = canSubmitAttendance(classLoadDetail);
 
   // ─── Save ─────────────────────────────────────────────────
-  const handleSave = async () => {
-    if (!submitGate.allowed) {
-      toast.push({ type: 'error', title: 'Cannot save', message: submitGate.reason });
-      return;
-    }
+  const doSave = async () => {
     setSaving(true);
     try {
       const inputs = Object.entries(marks)
@@ -170,7 +167,7 @@ export function PageAttendance() {
 
       await attendanceMutation(inputs);
       setSaved(true);
-      prefillKeyRef.current = queryKey; // mark as saved so re-fetch won't overwrite
+      prefillKeyRef.current = queryKey;
       toast.push({
         type:    'success',
         title:   'Attendance saved',
@@ -181,6 +178,14 @@ export function PageAttendance() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSave = () => {
+    if (!submitGate.allowed) {
+      setOverrideOpen(true);
+      return;
+    }
+    void doSave();
   };
 
   const classLoad = classLoads.find((c) => c.id === selectedClassLoadId);
@@ -273,8 +278,7 @@ export function PageAttendance() {
                 variant="primary"
                 icon={saved ? 'check-circle' : 'save'}
                 onClick={handleSave}
-                disabled={saving || !submitGate.allowed}
-                title={!submitGate.allowed ? submitGate.reason : undefined}
+                disabled={saving}
               >
                 {saving ? 'Saving…' : saved ? (isOnline ? 'Synced' : 'Saved locally') : 'Save & Sync'}
               </Btn>
@@ -449,7 +453,7 @@ export function PageAttendance() {
                   size="lg"
                   icon={saved ? 'check-circle' : 'save'}
                   onClick={handleSave}
-                  disabled={saving || !submitGate.allowed}
+                  disabled={saving}
                 >
                   {saving ? 'Saving…' : saved ? (isOnline ? 'Synced' : 'Saved locally') : 'Save & Sync'}
                 </Btn>
@@ -570,6 +574,34 @@ export function PageAttendance() {
               })}
             </tbody>
           </table>
+        </div>
+      </Modal>
+
+      {/* Override confirmation dialog */}
+      <Modal
+        open={overrideOpen}
+        onClose={() => setOverrideOpen(false)}
+        title="Override submission window?"
+        subtitle={submitGate.reason}
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-[13.5px] text-navy leading-relaxed">
+            You're outside the allowed submission window for this class. Saving
+            now will record attendance with a timestamp that falls outside the
+            scheduled period. This override is logged.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Btn variant="ghost" onClick={() => setOverrideOpen(false)}>
+              Cancel
+            </Btn>
+            <Btn
+              variant="primary"
+              icon="save"
+              onClick={() => { setOverrideOpen(false); void doSave(); }}
+            >
+              Save anyway
+            </Btn>
+          </div>
         </div>
       </Modal>
     </div>
