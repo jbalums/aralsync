@@ -63,6 +63,7 @@ export function PageAttendance() {
 
   // ─── Prefill marks from server / clear on selection change ─
   const prefillKeyRef = useRef('');
+  const rowRefs = useRef<(HTMLLIElement | null)[]>([]);
   const queryKey = `${selectedClassLoadId}-${date}-${session}`;
 
   useEffect(() => {
@@ -147,6 +148,10 @@ export function PageAttendance() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [focusIdx, roster, marks, setMark]);
+
+  useEffect(() => {
+    rowRefs.current[focusIdx]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [focusIdx]);
 
   // ─── Schedule gate ────────────────────────────────────────
   const submitGate = canSubmitAttendance(classLoadDetail);
@@ -388,6 +393,7 @@ export function PageAttendance() {
                   return (
                     <li
                       key={s.id}
+                      ref={(el) => { rowRefs.current[idx] = el; }}
                       onClick={() => setFocusIdx(idx)}
                       className={`flex items-center gap-3 px-3 sm:px-4 py-2.5 min-h-16 tx ${idx % 2 === 1 ? 'bg-slate-50/40' : ''} ${isFocus ? 'ring-2 ring-primary/40 ring-inset' : ''}`}
                     >
