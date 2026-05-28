@@ -1,7 +1,7 @@
 import { AuditLog } from '../../database/models/AuditLog.model';
 
 export interface AuditParams {
-  schoolId?: string | null;
+  schoolId?: string;
   actorId: string;
   actorName: string;
   action: string;

@@ -127,7 +127,7 @@ export const schoolController = {
     try {
       const year = await schoolService.activateYear(req.params.id as string, req.params.yearId as string);
       void logAudit({
-        schoolId:  req.params.id,
+        schoolId:  req.params.id as string,
         actorId:   req.user!.userId,
         actorName: req.user!.name,
         action:    'year.activate',

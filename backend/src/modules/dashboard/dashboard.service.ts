@@ -250,8 +250,8 @@ export const dashboardService = {
 
     // Assemble per-class-load summaries
     const classLoads: ClassLoadSummary[] = loads.map((load) => {
-      const subject = load.subjectId as { _id: mongoose.Types.ObjectId; name: string; gradeLevel: number };
-      const section = load.sectionId as { _id: mongoose.Types.ObjectId; name: string; gradeLevel: number };
+      const subject = load.subjectId as unknown as { _id: mongoose.Types.ObjectId; name: string; gradeLevel: number };
+      const section = load.sectionId as unknown as { _id: mongoose.Types.ObjectId; name: string; gradeLevel: number };
       const clId = (load._id as mongoose.Types.ObjectId).toString();
       const prog = progressMap.get(clId) ?? { WW: [0, 1] as [number, number], PT: [0, 1] as [number, number], QA: [0, 1] as [number, number] };
 
