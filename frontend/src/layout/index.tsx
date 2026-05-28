@@ -71,9 +71,15 @@ export function Sidebar({ route, setRoute, online, onClose = () => {} }) {
 	const lastSyncAt = useSyncStore((s) => s.lastSyncAt);
 	const [school, setSchool] = useState<School | null>(null);
 	useEffect(() => {
-		if (!user?.schoolId) { setSchool(null); return; }
+		if (!user?.schoolId) {
+			setSchool(null);
+			return;
+		}
 		db.schools.get(user.schoolId).then(async (cached) => {
-			if (cached) { setSchool(cached); return; }
+			if (cached) {
+				setSchool(cached);
+				return;
+			}
 			if (!online) return;
 			try {
 				const remote = await schoolsService.getById(user.schoolId);
@@ -116,18 +122,13 @@ export function Sidebar({ route, setRoute, online, onClose = () => {} }) {
 			</div>
 
 			{school && (
-				<div className="px-4 py-2.5 border-b border-line bg-surface/50">
-					<div className="flex items-center gap-2 min-w-0">
-						<Icon
-							name="school"
-							size={14}
-							className="text-primary shrink-0"
-						/>
-						<span className="text-[13px] font-semibold text-navy truncate">
+				<div className="px-4 py-2.5 border-b border-line bg-surface/50 flex flex-col items-center justify-center">
+					<div className="flex flex-col items-center gap-2 min-w-0">
+						<span className="text-[12px] font-semibold text-navy truncate px-1 break-after-all whitespace-break-spaces text-center">
 							{school.name}
 						</span>
 					</div>
-					<p className="text-[11px] text-muted mt-0.5 truncate pl-5.5">
+					<p className="text-[10px] text-muted mt-0.5 truncate pl-5.5">
 						{school.division}
 					</p>
 				</div>
@@ -251,7 +252,7 @@ export function Sidebar({ route, setRoute, online, onClose = () => {} }) {
 				{/* Teacher card */}
 				<div className="rounded-md border border-line bg-white p-2.5 flex items-center gap-2.5">
 					<div className="relative">
-						<Avatar name={user?.name ?? ""} size="sm" />
+						<Avatar name={user?.name ?? ""} src={user?.avatarUrl ?? ""} size="sm" />
 						{isAdmin && (
 							<span
 								className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-gradient-to-br from-primary to-emerald-500 inline-flex items-center justify-center border-2 border-white"
@@ -417,7 +418,7 @@ export function TopBar({
 							aria-label="Account"
 						>
 							<div className="relative">
-								<Avatar name={user?.name ?? ""} size="sm" />
+								<Avatar name={user?.name ?? ""} src={user?.avatarUrl ?? ""} size="sm" />
 								{isAdmin && (
 									<span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-gradient-to-br from-primary to-emerald-500 inline-flex items-center justify-center border-2 border-white">
 										<Icon
@@ -443,6 +444,7 @@ export function TopBar({
 										<div className="mb-2">
 											<Avatar
 												name={user?.name ?? ""}
+												src={user?.avatarUrl ?? ""}
 												size="lg"
 											/>
 										</div>
