@@ -7,6 +7,7 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import { Server as SocketIOServer } from "socket.io";
 
+import mongoose from "mongoose";
 import { connectDB } from "./database/connection";
 import { errorMiddleware } from "./middleware/error.middleware";
 import { registerSyncHandlers } from "./websocket/syncHandler";
@@ -49,6 +50,17 @@ app.use("/api/v1/quarterly-grades", quarterlyGradeRouter);
 app.use("/api/v1/schedules", scheduleRouter);
 app.use("/api/v1/sync", syncRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
+
+app.get("/health", (_req, res) => {
+	const dbState = mongoose.connection.readyState;
+	const dbStatus = dbState === 1 ? "connected" : dbState === 2 ? "connecting" : "disconnected";
+	res.status(dbState === 1 ? 200 : 503).json({
+		status: dbState === 1 ? "ok" : "degraded",
+		db: dbStatus,
+		uptime: Math.floor(process.uptime()),
+		timestamp: new Date().toISOString(),
+	});
+});
 
 app.use((_req, res) => {
 	res.status(404).json({ success: false, message: "Route not found" });
