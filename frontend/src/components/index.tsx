@@ -67,7 +67,15 @@ export function initialsOf(name) {
 	if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
 	return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
-export const AVATAR_SIZES = { xs: 24, sm: 32, md: 40, lg: 56, xl: 80 };
+export const AVATAR_SIZES = {
+	xs: 24,
+	sm: 32,
+	md: 40,
+	lg: 56,
+	xl: 80,
+	xxl: 120,
+	xxxl: 240,
+};
 export function Avatar({
 	name = "",
 	size = "md",
@@ -805,13 +813,13 @@ export function SectionHeader({
 	right?: React.ReactNode;
 }) {
 	return (
-		<div className="flex items-end justify-between gap-3 flex-wrap mb-4">
+		<div className="flex items-end justify-between gap-3 flex-wrap mb-3">
 			<div>
-				<h2 className="text-[18px] font-semibold text-navy tracking-tight">
+				<h2 className="text-[16px] font-semibold text-navy tracking-tight mb-0!">
 					{title}
 				</h2>
 				{subtitle && (
-					<p className="text-[13px] text-muted mt-1">{subtitle}</p>
+					<p className="text-[11px] text-muted mt-0!">{subtitle}</p>
 				)}
 			</div>
 			{right}
@@ -1031,14 +1039,15 @@ export function Field({
 		</label>
 	);
 }
-export function TextInput({ className = "", ...rest }) {
-	return (
+export const TextInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement> & { className?: string }>(
+	({ className = "", ...rest }, ref) => (
 		<input
+			ref={ref}
 			className={`w-full h-9 px-3 text-[13px] rounded-md border border-line bg-white focus:border-primary focus:outline-none tx placeholder:text-muted-light ${className}`}
 			{...rest}
 		/>
-	);
-}
+	),
+);
 export function Select({ className = "", children, ...rest }) {
 	return (
 		<div className="relative">
