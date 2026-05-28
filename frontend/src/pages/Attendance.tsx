@@ -264,7 +264,7 @@ export function PageAttendance() {
 	return (
 		<div className="page-anim flex flex-col gap-3 -m-4 sm:-m-6 -mt-4 sm:-mt-6 relative">
 			{/* Sticky top bar */}
-			<div className="sticky -top-10 z-20 bg-white border-b border-line px-4 sm:px-6 py-3">
+			<div className="sticky -top-6 z-20 bg-white border-b border-line px-4 sm:px-6 py-3">
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<div className="flex items-center gap-3 flex-wrap">
 						{/* Class selector */}
@@ -506,7 +506,7 @@ export function PageAttendance() {
 												rowRefs.current[idx] = el;
 											}}
 											onClick={() => setFocusIdx(idx)}
-											className={`flex items-center gap-3 px-3 sm:px-4 py-2.5 min-h-16 tx ${idx % 2 === 1 ? "bg-slate-50/40" : ""} ${isFocus ? "ring-1 ring-primary/40 bg-blue-50! ring-inset" : ""}`}
+											className={`flex items-center gap-3 px-3 sm:px-4 py-2.5 min-h-16 fade-in ${idx % 2 === 1 ? "bg-slate-50/40" : ""} ${isFocus ? "ring-1 ring-primary/40 bg-blue-50! ring-inset" : ""}`}
 										>
 											<span className="w-6 text-center text-[11px] font-mono text-muted">
 												{idx + 1}
@@ -597,7 +597,7 @@ export function PageAttendance() {
 					</Card>
 
 					{/* Bottom action card */}
-					<Card className="mt-4 p-4">
+					<Card className="mt-4 p-4 sticky -bottom-6">
 						<div className="flex items-center justify-between gap-3 max-w-screen-2xl mx-auto">
 							<div className="flex items-center gap-2 text-[12.5px] text-muted">
 								<Icon
@@ -641,7 +641,7 @@ export function PageAttendance() {
 				</div>
 
 				{/* Sidebar (desktop) */}
-				<aside className="hidden lg:flex flex-col gap-4 sticky top-40 self-start">
+				<aside className="hidden lg:flex flex-col gap-4 sticky top-35 self-start">
 					<Card className="p-4">
 						<SectionHeader
 							title="Search Student"
@@ -708,7 +708,7 @@ export function PageAttendance() {
 							title="Quick shortcuts"
 							subtitle="Click a row to focus · then press"
 						/>
-						<ul className="space-y-1.5 text-[12.5px]">
+						<ul className="space-y-1 text-[12.5px]">
 							{[
 								{ k: "P", label: "Mark Present" },
 								{ k: "L", label: "Mark Late" },
