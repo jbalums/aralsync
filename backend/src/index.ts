@@ -26,15 +26,12 @@ import { dashboardRouter } from "./modules/dashboard/dashboard.routes";
 
 const app = express();
 const PORT = process.env.PORT ?? 5000;
-const CLIENT_URL = [
-	"http://localhost:5173",
-	"http://localhost:5555",
-	"http://192.168.1.104:5555",
-	"http://localhost:4173",
-]; //process.env.CLIENT_URL ?? "http://localhost:5173";
+const CLIENT_URLS = process.env.CLIENT_URLS
+	? process.env.CLIENT_URLS.split(",")
+	: ["http://localhost:5173"];
 
 app.use(helmet());
-app.use(cors({ origin: CLIENT_URL, credentials: true }));
+app.use(cors({ origin: CLIENT_URLS, credentials: true }));
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -53,7 +50,12 @@ app.use("/api/v1/dashboard", dashboardRouter);
 
 app.get("/health", (_req, res) => {
 	const dbState = mongoose.connection.readyState;
-	const dbStatus = dbState === 1 ? "connected" : dbState === 2 ? "connecting" : "disconnected";
+	const dbStatus =
+		dbState === 1
+			? "connected"
+			: dbState === 2
+				? "connecting"
+				: "disconnected";
 	res.status(dbState === 1 ? 200 : 503).json({
 		status: dbState === 1 ? "ok" : "degraded",
 		db: dbStatus,
@@ -72,7 +74,7 @@ const server = http.createServer(app);
 
 const io = new SocketIOServer(server, {
 	cors: {
-		origin: CLIENT_URL,
+		origin: CLIENT_URLS,
 		methods: ["*"],
 	},
 });
