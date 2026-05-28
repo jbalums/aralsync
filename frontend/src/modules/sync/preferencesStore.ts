@@ -3,17 +3,19 @@ import { create } from 'zustand';
 const STORAGE_KEY = 'aralsync:syncPrefs';
 
 export interface SyncPreferences {
-  autoSync:       boolean;
-  syncInterval:   '1' | '5' | '15' | 'manual';
-  wifiOnly:       boolean;
-  backgroundSync: boolean;
+  autoSync:               boolean;
+  syncInterval:           '1' | '5' | '15' | 'manual';
+  wifiOnly:               boolean;
+  backgroundSync:         boolean;
+  showTransmutationTable: boolean;
 }
 
 const DEFAULTS: SyncPreferences = {
-  autoSync:       true,
-  syncInterval:   '5',
-  wifiOnly:       true,
-  backgroundSync: false,
+  autoSync:               true,
+  syncInterval:           '5',
+  wifiOnly:               true,
+  backgroundSync:         false,
+  showTransmutationTable: false,
 };
 
 function load(): SyncPreferences {
@@ -30,10 +32,11 @@ function save(prefs: SyncPreferences) {
 }
 
 interface PreferencesState extends SyncPreferences {
-  setAutoSync:       (v: boolean) => void;
-  setSyncInterval:   (v: SyncPreferences['syncInterval']) => void;
-  setWifiOnly:       (v: boolean) => void;
-  setBackgroundSync: (v: boolean) => void;
+  setAutoSync:               (v: boolean) => void;
+  setSyncInterval:           (v: SyncPreferences['syncInterval']) => void;
+  setWifiOnly:               (v: boolean) => void;
+  setBackgroundSync:         (v: boolean) => void;
+  setShowTransmutationTable: (v: boolean) => void;
 }
 
 export const usePreferencesStore = create<PreferencesState>((set, get) => ({
@@ -61,5 +64,11 @@ export const usePreferencesStore = create<PreferencesState>((set, get) => ({
     const next = { ...get(), backgroundSync: v };
     save(next);
     set({ backgroundSync: v });
+  },
+
+  setShowTransmutationTable: (v) => {
+    const next = { ...get(), showTransmutationTable: v };
+    save(next);
+    set({ showTransmutationTable: v });
   },
 }));

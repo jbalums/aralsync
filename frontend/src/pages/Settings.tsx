@@ -19,11 +19,19 @@ import {
 	Select,
 	SubjectChip,
 	Badge,
+	EmptyState,
 	Logo,
 } from "../components";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore — mockData.js has no declaration file
-import { CLASSES, SYNC_STATE } from "../data/mockData";
+import { SYNC_STATE } from "../data/mockData";
+import {
+	useClassLoads,
+	useUpdateClassLoad,
+	CLASS_LOAD_KEYS,
+} from "../modules/classrooms/useClassLoads";
+import { classLoadsService } from "../modules/classrooms/classLoads.service";
+import { DEFAULT_WEIGHTS } from "../shared/constants/grading";
 import { useAuthStore } from "../modules/auth/authStore";
 import { authService } from "../modules/auth/auth.service";
 import { schoolsService } from "../modules/classrooms/schools.service";
@@ -37,7 +45,12 @@ import {
 import { relativeTime } from "../shared/utils/relativeTime";
 import { disconnectSocket } from "../services/socket";
 import { db } from "../db";
-import type { Device, DeviceType } from "../shared/types";
+import type {
+	Device,
+	DeviceType,
+	ClassLoadListItem,
+	GradeComponentConfig,
+} from "../shared/types";
 
 // ─── Preset avatars ───────────────────────────────────────
 const PRESET_AVATARS = [
@@ -76,6 +89,228 @@ const schoolInfoSchema = z.object({
 	address: z.string().optional(),
 });
 type SchoolInfoValues = z.infer<typeof schoolInfoSchema>;
+
+// ─── Component config localStorage helpers ────────────────
+const COMP_CONFIG_KEY = "aralsync:componentConfig";
+
+function loadComponentConfig(id: string): GradeComponentConfig[] | null {
+	try {
+		const raw = localStorage.getItem(COMP_CONFIG_KEY);
+		if (!raw) return null;
+		const map = JSON.parse(raw) as Record<string, GradeComponentConfig[]>;
+		return map[id] ?? null;
+	} catch {
+		return null;
+	}
+}
+
+function saveComponentConfig(id: string, config: GradeComponentConfig[]) {
+	try {
+		const raw = localStorage.getItem(COMP_CONFIG_KEY);
+		const map = raw
+			? (JSON.parse(raw) as Record<string, GradeComponentConfig[]>)
+			: {};
+		map[id] = config;
+		localStorage.setItem(COMP_CONFIG_KEY, JSON.stringify(map));
+	} catch {}
+}
+
+// ─── CLASS WEIGHT ROW ─────────────────────────────────────
+function ClassWeightRow({
+	cl,
+	resetKey,
+}: {
+	cl: ClassLoadListItem;
+	resetKey: number;
+}) {
+	const toast = useToast() as {
+		push: (t: { type: string; message?: string; title?: string }) => void;
+	} | null;
+	const [expanded, setExpanded] = useState(false);
+	const [components, setComponents] = useState<GradeComponentConfig[]>(
+		() =>
+			loadComponentConfig(cl.id) ?? [
+				{ key: "WW", label: "Written Works", weight: cl.wwWeight },
+				{ key: "PT", label: "Performance Tasks", weight: cl.ptWeight },
+				{
+					key: "QA",
+					label: "Quarterly Assessment",
+					weight: cl.qaWeight,
+				},
+			],
+	);
+	const update = useUpdateClassLoad(cl.id);
+
+	useEffect(() => {
+		const saved = loadComponentConfig(cl.id);
+		if (saved) setComponents(saved);
+	}, [resetKey, cl.id]);
+
+	const totalWeight = components.reduce((s, c) => s + c.weight, 0);
+	const totalPct = Math.round(totalWeight * 100);
+	const valid = totalPct === 100;
+
+	const wwPct = Math.round(
+		(components.find((c) => c.key === "WW")?.weight ?? 0) * 100,
+	);
+	const ptPct = Math.round(
+		(components.find((c) => c.key === "PT")?.weight ?? 0) * 100,
+	);
+	const qaPct = Math.round(
+		(components.find((c) => c.key === "QA")?.weight ?? 0) * 100,
+	);
+
+	function addComponent() {
+		setComponents((prev) => [
+			...prev,
+			{ key: crypto.randomUUID(), label: "New Component", weight: 0 },
+		]);
+	}
+
+	function removeComponent(key: string) {
+		if (components.length <= 3) return;
+		setComponents((prev) => prev.filter((c) => c.key !== key));
+	}
+
+	function updateLabel(key: string, label: string) {
+		setComponents((prev) =>
+			prev.map((c) => (c.key === key ? { ...c, label } : c)),
+		);
+	}
+
+	function updateWeight(key: string, pct: number) {
+		setComponents((prev) =>
+			prev.map((c) => (c.key === key ? { ...c, weight: pct / 100 } : c)),
+		);
+	}
+
+	async function save() {
+		const ww = components.find((c) => c.key === "WW")?.weight ?? 0;
+		const pt = components.find((c) => c.key === "PT")?.weight ?? 0;
+		const qa = components.find((c) => c.key === "QA")?.weight ?? 0;
+		try {
+			saveComponentConfig(cl.id, components);
+			await update.mutateAsync({ weights: { ww, pt, qa } });
+			toast?.push({ type: "success", message: "Weights saved." });
+		} catch {
+			toast?.push({ type: "error", message: "Failed to save weights." });
+		}
+	}
+
+	function resetToDeped() {
+		setComponents([
+			{ key: "WW", label: "Written Works", weight: 0.2 },
+			{ key: "PT", label: "Performance Tasks", weight: 0.6 },
+			{ key: "QA", label: "Quarterly Assessment", weight: 0.2 },
+		]);
+	}
+
+	return (
+		<div className="border border-line rounded-md p-3">
+			<div className="flex items-center justify-between gap-3">
+				<div className="flex items-center gap-2 flex-wrap">
+					<SubjectChip subject={cl.subject.name} />
+					<span className="text-muted text-[11px]">
+						{cl.subject.gradeLevel} · {cl.section.name}
+					</span>
+					<span className="text-muted text-[11px]">
+						· {components.length} component
+						{components.length !== 1 ? "s" : ""}
+					</span>
+				</div>
+				<div className="flex items-center gap-2 shrink-0">
+					<Badge status={valid ? "synced" : "failed"}>
+						{totalPct}%
+					</Badge>
+					<Btn
+						variant="ghost"
+						size="sm"
+						icon={expanded ? "chevron-up" : "chevron-down"}
+						onClick={() => setExpanded((e) => !e)}
+					/>
+				</div>
+			</div>
+
+			<ComponentWeightBar
+				ww={wwPct}
+				pt={ptPct}
+				qa={qaPct}
+				className="mt-2"
+			/>
+
+			{expanded && (
+				<div className="mt-3 space-y-1.5 border-t border-line pt-3">
+					{components.map((comp) => (
+						<div key={comp.key} className="flex items-center gap-2">
+							<input
+								value={comp.label}
+								onChange={(e) =>
+									updateLabel(comp.key, e.target.value)
+								}
+								className="flex-1 h-7 rounded border border-line bg-white px-2 text-[12px] text-navy focus:outline-none focus:ring-1 focus:ring-primary"
+								placeholder="Component name"
+							/>
+							<input
+								type="number"
+								min={0}
+								max={100}
+								step={1}
+								value={Math.round(comp.weight * 100)}
+								onChange={(e) =>
+									updateWeight(
+										comp.key,
+										Math.max(
+											0,
+											Math.min(
+												100,
+												Number(e.target.value),
+											),
+										),
+									)
+								}
+								className="w-14 h-7 rounded border border-line bg-white px-2 text-[12px] font-mono text-navy focus:outline-none focus:ring-1 focus:ring-primary"
+							/>
+							<span className="text-muted text-[11px]">%</span>
+							<Btn
+								variant="ghost"
+								size="sm"
+								icon="x"
+								disabled={components.length <= 3}
+								onClick={() => removeComponent(comp.key)}
+							/>
+						</div>
+					))}
+					<Btn
+						variant="ghost"
+						size="sm"
+						icon="plus"
+						onClick={addComponent}
+					>
+						Add component
+					</Btn>
+					<div className="flex items-center gap-2 pt-1">
+						<Btn
+							variant="primary"
+							size="sm"
+							disabled={!valid || update.isPending}
+							onClick={() => void save()}
+						>
+							{update.isPending ? "Saving…" : "Save"}
+						</Btn>
+						<Btn
+							variant="ghost"
+							size="sm"
+							icon="rotate-ccw"
+							onClick={resetToDeped}
+						>
+							Reset to DepEd
+						</Btn>
+					</div>
+				</div>
+			)}
+		</div>
+	);
+}
 
 // ─── SETTINGS ────────────────────────────────────────────
 export function PageSettings() {
@@ -187,7 +422,52 @@ export function PageSettings() {
 		setSyncInterval,
 		setWifiOnly,
 		setBackgroundSync,
+		showTransmutationTable,
+		setShowTransmutationTable,
 	} = usePreferencesStore();
+
+	// Grading config
+	const { data: classLoads, isLoading: isClassLoadsLoading } =
+		useClassLoads();
+	const [gradingResetKey, setGradingResetKey] = useState(0);
+
+	const DEPED_PRESET: GradeComponentConfig[] = [
+		{ key: "WW", label: "Written Works", weight: 0.2 },
+		{ key: "PT", label: "Performance Tasks", weight: 0.6 },
+		{ key: "QA", label: "Quarterly Assessment", weight: 0.2 },
+	];
+	const LANG_PRESET: GradeComponentConfig[] = [
+		{ key: "WW", label: "Written Works", weight: 0.25 },
+		{ key: "PT", label: "Performance Tasks", weight: 0.5 },
+		{ key: "QA", label: "Quarterly Assessment", weight: 0.25 },
+	];
+
+	async function applyPresetToAll(preset: GradeComponentConfig[]) {
+		if (!classLoads?.length) return;
+		const ww = preset.find((c) => c.key === "WW")?.weight ?? 0;
+		const pt = preset.find((c) => c.key === "PT")?.weight ?? 0;
+		const qa = preset.find((c) => c.key === "QA")?.weight ?? 0;
+		try {
+			classLoads.forEach((cl) => saveComponentConfig(cl.id, preset));
+			await Promise.all(
+				classLoads.map((cl) =>
+					classLoadsService.update(cl.id, {
+						weights: { ww, pt, qa },
+					}),
+				),
+			);
+			await queryClient.invalidateQueries({
+				queryKey: CLASS_LOAD_KEYS.all,
+			});
+			setGradingResetKey((k) => k + 1);
+			toast?.push({
+				type: "success",
+				message: "Preset applied to all classes.",
+			});
+		} catch {
+			toast?.push({ type: "error", message: "Failed to apply preset." });
+		}
+	}
 
 	// Profile form
 	const {
@@ -348,12 +628,12 @@ export function PageSettings() {
 									<Avatar
 										name={user?.name ?? ""}
 										src={displayAvatarSrc}
-										size="xl"
+										size="xxxl"
 									/>
 									<span className="absolute inset-0 rounded-full bg-black/30 opacity-0 group-hover:opacity-100 tx flex items-center justify-center">
 										<Icon
 											name="camera"
-											size={18}
+											size={32}
 											className="text-white"
 										/>
 									</span>
@@ -529,87 +809,39 @@ export function PageSettings() {
 					</Card>
 				)}
 
-				{/* ── Grading config (mock — untouched) ──────── */}
+				{/* ── Grading config ──────────────────────────── */}
 				{sub === "grading" && (
 					<Card className="p-5">
 						<SectionHeader
 							title="Grading configuration"
-							subtitle="DepEd component weights · per subject"
+							subtitle="Configure component weights per class load · min 3 components"
 						/>
-						<div className="overflow-hidden rounded-md border border-line">
-							<table className="w-full text-[13px]">
-								<thead className="bg-surface text-muted text-left">
-									<tr>
-										<th className="px-3 py-2 font-semibold">
-											Subject
-										</th>
-										<th className="px-3 py-2 font-semibold">
-											WW
-										</th>
-										<th className="px-3 py-2 font-semibold">
-											PT
-										</th>
-										<th className="px-3 py-2 font-semibold">
-											QA
-										</th>
-										<th className="px-3 py-2 font-semibold">
-											Total
-										</th>
-									</tr>
-								</thead>
-								<tbody>
-									{(CLASSES as any[]).map((c: any) => {
-										const t =
-											c.weights.ww +
-											c.weights.pt +
-											c.weights.qa;
-										return (
-											<tr
-												key={c.id}
-												className="border-t border-line"
-											>
-												<td className="px-3 py-2">
-													<div className="flex items-center gap-2">
-														<SubjectChip
-															subject={c.subject}
-														/>
-														<span className="text-muted text-[11px]">
-															{c.grade} ·{" "}
-															{c.section}
-														</span>
-													</div>
-												</td>
-												<td className="px-3 py-2">
-													<span className="font-mono">
-														{c.weights.ww}%
-													</span>
-												</td>
-												<td className="px-3 py-2">
-													<span className="font-mono">
-														{c.weights.pt}%
-													</span>
-												</td>
-												<td className="px-3 py-2">
-													<span className="font-mono">
-														{c.weights.qa}%
-													</span>
-												</td>
-												<td className="px-3 py-2">
-													<Badge
-														status={
-															t === 100
-																? "synced"
-																: "pending"
-														}
-													>
-														{t}%
-													</Badge>
-												</td>
-											</tr>
-										);
-									})}
-								</tbody>
-							</table>
+						<div className="space-y-2 mt-1">
+							{isClassLoadsLoading && (
+								<div className="space-y-2">
+									{[...Array(3)].map((_, i) => (
+										<div
+											key={i}
+											className="h-14 rounded-md bg-slate-100 animate-pulse"
+										/>
+									))}
+								</div>
+							)}
+							{classLoads?.map((cl) => (
+								<ClassWeightRow
+									key={cl.id}
+									cl={cl}
+									resetKey={gradingResetKey}
+								/>
+							))}
+							{!isClassLoadsLoading && !classLoads?.length && (
+								<EmptyState
+									icon="graduation-cap"
+									title="No class loads"
+									description="Create a class load to configure grading weights."
+									action={null}
+								/>
+							)}
 						</div>
 						<div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
 							<Card className="p-4 bg-surface/70">
@@ -625,6 +857,17 @@ export function PageSettings() {
 									qa={20}
 									className="mt-2"
 								/>
+								<Btn
+									variant="soft"
+									size="sm"
+									className="mt-3"
+									disabled={!classLoads?.length}
+									onClick={() =>
+										void applyPresetToAll(DEPED_PRESET)
+									}
+								>
+									Apply to all classes
+								</Btn>
 							</Card>
 							<Card className="p-4 bg-surface/70">
 								<div className="text-[12px] font-semibold text-navy">
@@ -639,11 +882,22 @@ export function PageSettings() {
 									qa={25}
 									className="mt-2"
 								/>
+								<Btn
+									variant="soft"
+									size="sm"
+									className="mt-3"
+									disabled={!classLoads?.length}
+									onClick={() =>
+										void applyPresetToAll(LANG_PRESET)
+									}
+								>
+									Apply to all classes
+								</Btn>
 							</Card>
 						</div>
 						<Switch
-							value={true}
-							onChange={() => {}}
+							value={showTransmutationTable}
+							onChange={setShowTransmutationTable}
 							label="Show transmutation table on grade entry"
 							hint="Helpful when computing raw → transmuted scores during grading."
 						/>

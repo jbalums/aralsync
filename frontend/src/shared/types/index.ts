@@ -1,3 +1,9 @@
+export interface GradeComponentConfig {
+  key: string;
+  label: string;
+  weight: number; // decimal 0–1; all components must sum to 1.0
+}
+
 export type AttendanceStatus = 'present' | 'absent' | 'late' | 'excused';
 export type Session = 'AM' | 'PM';
 export type GradeComponent = 'WW' | 'PT' | 'QA';
