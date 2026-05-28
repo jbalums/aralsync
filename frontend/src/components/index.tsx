@@ -247,7 +247,7 @@ export function Modal({
 	if (!open) return null;
 	return (
 		<div
-			className="fixed inset-0 z-[80] flex items-center justify-center p-4"
+			className="fixed inset-0 z-[80] flex items-center justify-center p-4 fade-in"
 			role="dialog"
 			aria-modal="true"
 		>
@@ -299,7 +299,7 @@ export function ToastProvider({ children }) {
 	const [toasts, setToasts] = useState([]);
 	const push = useCallback((t) => {
 		const id = Math.random().toString(36).slice(2, 9);
-		const toast = { id, type: "info", duration: 3200, ...t };
+		const toast = { id, type: "info", duration: 4200, ...t };
 		setToasts((prev) => [...prev, toast]);
 		if (toast.duration > 0) {
 			setTimeout(
@@ -1039,15 +1039,16 @@ export function Field({
 		</label>
 	);
 }
-export const TextInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement> & { className?: string }>(
-	({ className = "", ...rest }, ref) => (
-		<input
-			ref={ref}
-			className={`w-full h-9 px-3 text-[13px] rounded-md border border-line bg-white focus:border-primary focus:outline-none tx placeholder:text-muted-light ${className}`}
-			{...rest}
-		/>
-	),
-);
+export const TextInput = React.forwardRef<
+	HTMLInputElement,
+	React.InputHTMLAttributes<HTMLInputElement> & { className?: string }
+>(({ className = "", ...rest }, ref) => (
+	<input
+		ref={ref}
+		className={`w-full h-9 px-3 text-[13px] rounded-md border border-line bg-white focus:border-primary focus:outline-none tx placeholder:text-muted-light ${className}`}
+		{...rest}
+	/>
+));
 export function Select({ className = "", children, ...rest }) {
 	return (
 		<div className="relative">
